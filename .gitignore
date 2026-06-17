@@ -1,0 +1,32 @@
+# --- Python runtime files ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# --- Local database files & runtime logs ---
+# Keeps telemetry data databases and logs out of git
+data/
+*.db
+*.sqlite3
+*.csv
+*.log
+
+# --- Machine Learning / Large Binary Blobs ---
+*.pkl
+*.model
+*.jsonl
+*.pkl
+*.h5
+
+# --- FreeCAD and Enclosure exports ---
+# Ignore generated raw STL files (re-generate them using the script)
+*.stl
+*.fcstd1
+
+# --- Arduino IDE Temp files ---
+build/
+libraries/
+.local.ino.properties
