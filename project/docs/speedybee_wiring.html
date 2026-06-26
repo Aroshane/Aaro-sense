@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroSense — SpeedyBee F405 & ESP32-S3 Wiring Guide</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #070c14;
+            --panel-bg: #0e1622;
+            --border-color: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --text-main: #f3f4f6;
+            --text-mute: #8b9bb0;
+            
+            /* Neon color palette */
+            --neon-blue: #00d2ff;
+            --neon-purple: #9d4edd;
+            --neon-green: #00f5d4;
+            --neon-red: #ff2a5f;
+            --neon-orange: #ff9100;
+            --neon-yellow: #fee440;
+            
+            /* Wire Colors */
+            --color-vcc: #ef4444;    /* Red */
+            --color-gnd: #4b5563;    /* Black / Dark Grey */
+            --color-tx: #3b82f6;     /* Blue */
+            --color-rx: #10b981;     /* Green */
+            --color-sda: #a78bfa;    /* Purple */
+            --color-scl: #fbbf24;    /* Yellow */
+            --color-video: #f472b6;  /* Pink */
+            --color-control: #38bdf8;/* Light Blue */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(0, 210, 255, 0.01), transparent 70%),
+                linear-gradient(rgba(255, 255, 255, 0.005) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.005) 1px, transparent 1px);
+            background-size: 100% 100%, 25px 25px, 25px 25px;
+        }
+
+        /* ── Header ── */
+        header {
+            padding: 20px 40px;
+            background: rgba(14, 22, 34, 0.7);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--text-mute);
+            margin-top: 2px;
+        }
+
+        .sys-badge {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neon-green);
+            background: rgba(0, 245, 212, 0.06);
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            padding: 6px 14px;
+            border-radius: 6px;
+        }
+
+        /* ── Layout Workspace ── */
+        .workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1920px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ── Left Column: Selector & Steps ── */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-mute);
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title span.count {
+            font-size: 10px;
+            color: var(--neon-blue);
+            background: rgba(0, 210, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .btn-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-item {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .btn-item.active {
+            background: rgba(0, 210, 255, 0.06);
+            border-color: var(--neon-blue);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.08);
+        }
+
+        .btn-badge {
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-fc { background: rgba(157, 78, 221, 0.15); color: var(--neon-purple); border: 1px solid rgba(157, 78, 221, 0.3); }
+        .badge-payload { background: rgba(0, 210, 255, 0.15); color: var(--neon-blue); border: 1px solid rgba(0, 210, 255, 0.3); }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .step-item {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text-mute);
+            padding: 10px 14px;
+            border-left: 2px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.005);
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.02);
+            border-left-color: var(--text-mute);
+        }
+
+        .step-item.active-step {
+            color: #fff;
+            background: rgba(0, 210, 255, 0.03);
+            border-left-color: var(--neon-blue);
+            font-weight: 500;
+        }
+
+        /* ── Center Column: Graphic Diagram Canvas ── */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: #090e16;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            height: calc(100vh - 120px);
+        }
+
+        /* SVG Static Wires Overlay */
+        .svg-wires {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .wire-path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 2px;
+            opacity: 0.15;
+            transition: opacity 0.3s, stroke-width 0.3s;
+        }
+
+        .wire-path.active {
+            opacity: 0.95 !important;
+            stroke-width: 3.5px;
+            filter: drop-shadow(0 0 4px var(--shadow-color));
+        }
+
+        /* ── Virtual Boards and Component Blocks ── */
+        .component-block {
+            position: absolute;
+            background: #111b27;
+            border: 1.5px solid #233143;
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 20;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .component-block:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .component-block.active-comp {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.15);
+            background: #152536;
+        }
+
+        .component-block.dimmed-comp {
+            opacity: 0.15;
+        }
+
+        .comp-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Pad Terminals */
+        .terminals-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .terminal-pad {
+            width: 14px;
+            height: 14px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .terminal-pad::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #d4af37; /* Solder color */
+            border-radius: 50%;
+        }
+
+        .pad-lbl {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8px;
+            color: var(--text-mute);
+            position: absolute;
+            bottom: -13px;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        /* SpeedyBee F405 V5 PCB style */
+        #speedybee-board {
+            position: absolute;
+            left: 260px;
+            top: 30px;
+            width: 300px;
+            height: 300px;
+            background: #111215;
+            border: 4px solid #d4af37; /* Gold rim */
+            border-radius: 16px;
+            padding: 8px;
+            z-index: 25;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.7), inset 0 0 30px rgba(0,0,0,0.8);
+            transition: all 0.3s;
+        }
+
+        #speedybee-board.dimmed-comp {
+            opacity: 0.15;
+        }
+
+        /* Mounting Holes */
+        .m-hole {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #f1c40f; /* Yellow rubber */
+            border: 3px solid #b7950b;
+            border-radius: 50%;
+            z-index: 30;
+        }
+        .m-hole.top-left { top: 6px; left: 6px; }
+        .m-hole.top-right { top: 6px; right: 6px; }
+        .m-hole.bottom-left { bottom: 6px; left: 6px; }
+        .m-hole.bottom-right { bottom: 6px; right: 6px; }
+        .m-hole::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: #090e16;
+            border-radius: 50%;
+        }
+
+        /* USB Port */
+        .sb-usb-port {
+            position: absolute;
+            right: -6px;
+            top: 154px;
+            width: 12px;
+            height: 22px;
+            background: #a6b1c0;
+            border: 1px solid #717d8c;
+            border-radius: 2px 0 0 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 26;
+        }
+
+        /* Solder pad rows */
+        .sb-top-pads-row {
+            position: absolute;
+            top: 4px;
+            left: 40px;
+            width: 220px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 28;
+        }
+
+        .sb-top-inner-box {
+            position: absolute;
+            top: 42px;
+            left: 40px;
+            width: 220px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 28;
+        }
+
+        .sb-inner-group {
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            border-radius: 4px;
+            padding: 2px 4px;
+            display: flex;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .sb-bottom-pads-container {
+            position: absolute;
+            bottom: 12px;
+            left: 40px;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 28;
+        }
+
+        .sb-bottom-row-1, .sb-bottom-row-2 {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        /* Pad Node */
+        .sb-pad-node {
+            width: 15px;
+            height: 15px;
+            background: #232529;
+            border: 1px solid #d4af37;
+            border-radius: 2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sb-pad-node::after {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: #f1c40f;
+            border-radius: 1px;
+        }
+
+        .sb-pad-node span.lbl {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 7px;
+            font-weight: 700;
+            color: #ffffff; /* Crisp white silkscreen for readability */
+            position: absolute;
+            text-transform: uppercase;
+            white-space: nowrap;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .sb-pad-node.top span.lbl { bottom: -11px; }
+        .sb-pad-node.inner span.lbl { bottom: -11px; }
+        
+        .sb-bottom-row-1 .sb-pad-node span.lbl { bottom: 17px; } /* Above the pad */
+        .sb-bottom-row-2 .sb-pad-node span.lbl { bottom: 17px; } /* Above the pad */
+
+        /* Highlight state */
+        .terminal-pad.highlight-pad, .sb-pad-node.highlight-pad {
+            background: var(--highlight-color, var(--neon-blue)) !important;
+            border-color: #fff !important;
+            border-style: solid !important;
+            box-shadow: 0 0 12px var(--highlight-color, var(--neon-blue)) !important;
+        }
+        .terminal-pad.highlight-pad::after, .sb-pad-node.highlight-pad::after {
+            background: #fff !important;
+        }
+
+        /* Dimmed/unused state for pads that don't need connections */
+        .sb-pad-node.unused, .terminal-pad.unused {
+            opacity: 0.25;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+            background: #18191c !important;
+            cursor: not-allowed;
+        }
+        .sb-pad-node.unused::after, .terminal-pad.unused::after {
+            background: #555 !important;
+        }
+        .sb-pad-node.unused span.lbl, .terminal-pad.unused span.lbl {
+            color: rgba(255, 255, 255, 0.3) !important;
+            font-weight: 400;
+        }
+
+        /* Center Details */
+        .sb-brand-title {
+            position: absolute;
+            top: 72px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 1px;
+            z-index: 27;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+        }
+
+        .sb-board-title {
+            position: absolute;
+            top: 212px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 2px;
+            z-index: 27;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+        }
+
+        .sb-qr-code {
+            position: absolute;
+            top: 95px;
+            left: 95px;
+            width: 110px;
+            height: 110px;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+            z-index: 27;
+        }
+        
+        .qr-pattern {
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(90deg, #000 25%, transparent 25%),
+                linear-gradient(270deg, #000 25%, transparent 25%),
+                linear-gradient(#000 25%, transparent 25%),
+                linear-gradient(180deg, #000 25%, transparent 25%);
+            background-size: 6px 6px;
+            opacity: 0.85;
+            position: relative;
+        }
+
+        .qr-pattern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 5px solid #000;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .qr-pattern::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            border: 5px solid #000;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .qr-bottom-corner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 5px solid #000;
+            background: #fff;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        .sb-boot-btn-container {
+            position: absolute;
+            left: 40px;
+            top: 130px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 27;
+        }
+
+        .sb-boot-btn {
+            width: 12px;
+            height: 12px;
+            background: #232529;
+            border: 2px solid #555;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        .sb-boot-lbl {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 7px;
+            color: #8b9bb0;
+            font-weight: 700;
+            margin-top: 3px;
+            text-transform: uppercase;
+        }
+
+        /* ESP32-S3 Vector PCB */
+        #esp32-board {
+            position: absolute;
+            left: 260px;
+            top: 360px;
+            width: 300px;
+            height: 180px;
+            background: #112233;
+            border: 3px solid #00f5d4;
+            border-radius: 12px;
+            padding: 10px;
+            z-index: 25;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+            transition: all 0.3s;
+        }
+
+        #esp32-board.dimmed-comp {
+            opacity: 0.15;
+        }
+
+        /* ── Right Column: Specs Panel ── */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .spec-table th, .spec-table td {
+            text-align: left;
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .spec-table th {
+            color: var(--text-mute);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.5px;
+        }
+
+        .spec-table td {
+            font-weight: 500;
+        }
+
+        .wire-tag {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 8px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .cli-box {
+            background: #04080e;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            color: var(--neon-green);
+            line-height: 1.4;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .cli-comment {
+            color: #4f5b66;
+        }
+
+        .canvas-section-lbl {
+            position: absolute;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.12);
+            pointer-events: none;
+        }
+
+        .color-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Panel -->
+    <header>
+        <div class="header-title">
+            <h1>AeroSense — SpeedyBee F405 & ESP32-S3 Wiring Guide</h1>
+            <p>Select a component to display its wiring routes and pin mappings to the SpeedyBee autopilot</p>
+        </div>
+        <div class="sys-badge">Status: ArduCopter Telemetry Active</div>
+    </header>
+
+    <!-- Workspace -->
+    <main class="workspace">
+
+        <!-- Column Left: Selector and Connection Steps -->
+        <section class="left-panel">
+            
+            <div class="card">
+                <div class="card-title">
+                    <span>Avionics Components</span>
+                    <span class="count">2</span>
+                </div>
+                <div class="btn-list">
+                    <button class="btn-item active" onclick="selectComp('gps', this)">
+                        <span>M8N GPS Module</span>
+                        <span class="btn-badge badge-fc">Avionics</span>
+                    </button>
+                    <button class="btn-item" onclick="selectComp('elrs', this)">
+                        <span>FlySky FS-iA6B Receiver</span>
+                        <span class="btn-badge badge-fc">Avionics</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>AeroSense Payload Connections</span>
+                    <span class="count">3</span>
+                </div>
+                <div class="btn-list">
+                    <button class="btn-item" onclick="selectComp('mavlink', this)">
+                        <span>Autopilot MAVLink Link</span>
+                        <span class="btn-badge badge-payload">Payload</span>
+                    </button>
+                    <button class="btn-item" onclick="selectComp('pms5003', this)">
+                        <span>PMS5003 PM Sensor</span>
+                        <span class="btn-badge badge-payload">Payload</span>
+                    </button>
+                    <button class="btn-item" onclick="selectComp('mq135', this)">
+                        <span>MQ-135 Gas Sensor</span>
+                        <span class="btn-badge badge-payload">Payload</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Optional FPV Notice Card -->
+            <div class="card" style="border-color: rgba(255, 145, 0, 0.2); background: rgba(255, 145, 0, 0.02);">
+                <div class="card-title" style="color: var(--neon-orange); border-bottom-color: rgba(255, 145, 0, 0.1);">
+                    <span>⚠️ FPV Video Optional</span>
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: var(--text-mute);">
+                    <p style="margin-bottom: 8px;"><strong>FPV Camera & VTX (Video Transmitter):</strong></p>
+                    <p>These analog video components are for pilot goggles view and are <strong>not required</strong> for the AeroSense pollution mapper. Leave the <strong>CAM</strong>, <strong>VTX</strong>, and adjacent <strong>9V/G</strong> pads unconnected. They are greyed out on the board layout below.</p>
+                </div>
+            </div>
+
+            <!-- Steps checklist Card -->
+            <div class="card">
+                <div id="step-card-title" class="card-title">GPS Module Pin Connection Steps</div>
+                <div id="step-list-container" class="step-list">
+                    <!-- Steps injected dynamically -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Column Center: Graphic Schematic -->
+        <section class="center-panel" id="schematic-viewport">
+            
+            <!-- Static SVG Wires Overlay -->
+            <svg id="svg-wires-container" class="svg-wires"></svg>
+
+            <!-- Subgraph boundaries labels -->
+            <div class="canvas-section-lbl" style="left: 20px; top: 20px;">Drone Autopilot Core (SpeedyBee)</div>
+            <div class="canvas-section-lbl" style="left: 20px; top: 400px;">Payload Sensor Core (ESP32-S3)</div>
+
+            <!-- ── Left Column Components ── -->
+
+
+            <!-- GPS Module -->
+            <div id="comp-gps" class="component-block" style="left: 30px; top: 140px; width: 220px;" onclick="selectComp('gps', this)">
+                <div class="comp-title">M8N GPS / Compass</div>
+                <div class="terminals-row">
+                    <div id="pad-gps-vcc" class="terminal-pad"><span class="pad-lbl">VCC</span></div>
+                    <div id="pad-gps-gnd" class="terminal-pad"><span class="pad-lbl">GND</span></div>
+                    <div id="pad-gps-tx" class="terminal-pad"><span class="pad-lbl">TX</span></div>
+                    <div id="pad-gps-rx" class="terminal-pad"><span class="pad-lbl">RX</span></div>
+                    <div id="pad-gps-sda" class="terminal-pad"><span class="pad-lbl">SDA</span></div>
+                    <div id="pad-gps-scl" class="terminal-pad"><span class="pad-lbl">SCL</span></div>
+                </div>
+            </div>
+
+            <!-- FlySky FS-iA6B Receiver -->
+            <div id="comp-elrs" class="component-block" style="left: 30px; top: 250px; width: 200px;" onclick="selectComp('elrs', this)">
+                <div class="comp-title">FlySky FS-iA6B Rx</div>
+                <div class="terminals-row">
+                    <div id="pad-rx-vcc" class="terminal-pad"><span class="pad-lbl">VCC</span></div>
+                    <div id="pad-rx-gnd" class="terminal-pad"><span class="pad-lbl">GND</span></div>
+                    <div id="pad-rx-ibus" class="terminal-pad"><span class="pad-lbl">i-BUS</span></div>
+                </div>
+            </div>
+
+            <!-- MQ-135 Gas Sensor (Payload) -->
+            <div id="comp-mq135" class="component-block" style="left: 30px; top: 500px; width: 190px;" onclick="selectComp('mq135', this)">
+                <div class="comp-title">MQ-135 Gas Sensor</div>
+                <div class="terminals-row">
+                    <div id="pad-mq-vcc" class="terminal-pad"><span class="pad-lbl">VCC</span></div>
+                    <div id="pad-mq-gnd" class="terminal-pad"><span class="pad-lbl">GND</span></div>
+                    <div id="pad-mq-ao" class="terminal-pad"><span class="pad-lbl">AO</span></div>
+                </div>
+            </div>
+
+            <!-- ── Center Column: SpeedyBee & ESP32 ── -->
+            
+            <!-- SpeedyBee F405 V5 Flight Controller -->
+            <div id="speedybee-board">
+                <!-- Mounting Holes -->
+                <div class="m-hole top-left"></div>
+                <div class="m-hole top-right"></div>
+                <div class="m-hole bottom-left"></div>
+                <div class="m-hole bottom-right"></div>
+
+                <!-- USB Port -->
+                <div class="sb-usb-port"></div>
+
+                <!-- Top Row Pads (11 pads) -->
+                <div class="sb-top-pads-row">
+                    <div id="sb-pad-5v-top" class="sb-pad-node top unused" title="5V Power (Unused)"><span class="lbl">5V</span></div>
+                    <div id="sb-pad-gnd-top" class="sb-pad-node top unused" title="Ground (Unused)"><span class="lbl">G</span></div>
+                    <div id="sb-pad-cam" class="sb-pad-node top unused" title="CAM (FPV Camera - Not Required)"><span class="lbl">CAM</span></div>
+                    <div id="sb-pad-cc" class="sb-pad-node top unused" title="Camera Control (Unused)"><span class="lbl">CC</span></div>
+                    <div id="sb-pad-bplus" class="sb-pad-node top unused" title="Battery + (Unused)"><span class="lbl">B+</span></div>
+                    <div id="sb-pad-bminus" class="sb-pad-node top unused" title="Battery - (Unused)"><span class="lbl">B-</span></div>
+                    <div id="sb-pad-pplus" class="sb-pad-node top unused" title="P+ Telemetry (Unused)"><span class="lbl">P+</span></div>
+                    <div id="sb-pad-pminus" class="sb-pad-node top unused" title="P- Ground (Unused)"><span class="lbl">P-</span></div>
+                    <div id="sb-pad-gnd-top2" class="sb-pad-node top unused" title="Ground (Unused)"><span class="lbl">G</span></div>
+                    <div id="sb-pad-5v-top2" class="sb-pad-node top unused" title="5V Power (Unused)"><span class="lbl">5V</span></div>
+                    <div id="sb-pad-led" class="sb-pad-node top unused" title="LED Control (Unused)"><span class="lbl">LED</span></div>
+                </div>
+
+                <!-- Front Pads White Box Group -->
+                <div class="sb-top-inner-box">
+                    <div class="sb-inner-group">
+                        <div id="sb-pad-t2" class="sb-pad-node inner" title="T2 (UART2 TX - Telemetry to ESP32 RX1)"><span class="lbl">T2</span></div>
+                        <div id="sb-pad-r2" class="sb-pad-node inner" title="R2 (UART2 RX - Telemetry from ESP32 TX1)"><span class="lbl">R2</span></div>
+                        <div id="sb-pad-4v5-topinner" class="sb-pad-node inner" title="4V5 Power (Powers ESP32 Payload)"><span class="lbl">4V5</span></div>
+                        <div id="sb-pad-gnd-topinner" class="sb-pad-node inner" title="Ground (ESP32 Reference Ground)"><span class="lbl">G</span></div>
+                    </div>
+                    <div class="sb-inner-group">
+                        <div id="sb-pad-gnd-s5" class="sb-pad-node inner unused" title="Servo Ground (Unused)"><span class="lbl">G</span></div>
+                        <div id="sb-pad-5v-s5" class="sb-pad-node inner unused" title="Servo 5V Power (Unused)"><span class="lbl">5V</span></div>
+                        <div id="sb-pad-s5" class="sb-pad-node inner unused" title="Servo Signal 5 (Unused)"><span class="lbl">S5</span></div>
+                    </div>
+                    <div class="sb-inner-group">
+                        <div id="sb-pad-gnd-s6" class="sb-pad-node inner unused" title="Servo Ground (Unused)"><span class="lbl">G</span></div>
+                        <div id="sb-pad-5v-s6" class="sb-pad-node inner unused" title="Servo 5V Power (Unused)"><span class="lbl">5V</span></div>
+                        <div id="sb-pad-s6" class="sb-pad-node inner unused" title="Servo Signal 6 (Unused)"><span class="lbl">S6</span></div>
+                    </div>
+                </div>
+
+                <!-- Board Titles & Brand -->
+                <div class="sb-brand-title">SpeedyBee</div>
+                
+                <!-- QR Code sticker block -->
+                <div class="sb-qr-code">
+                    <div class="qr-pattern">
+                        <div class="qr-bottom-corner"></div>
+                    </div>
+                </div>
+
+                <!-- MCU chip label -->
+                <div class="sb-board-title">F405 V5</div>
+
+                <!-- Boot Button -->
+                <div class="sb-boot-btn-container">
+                    <div class="sb-boot-btn"></div>
+                    <span class="sb-boot-lbl">BOOT</span>
+                </div>
+
+                <!-- Bottom Double-Row Pads -->
+                <div class="sb-bottom-pads-container">
+                    <!-- Row 1 (Upper) -->
+                    <div class="sb-bottom-row-1">
+                        <div id="sb-pad-gnd-gps" class="sb-pad-node bottom" title="Ground (GPS Power & Signal GND)"><span class="lbl">G</span></div>
+                        <div id="sb-pad-t4" class="sb-pad-node bottom" title="T4 (UART4 TX - Config updates to GPS RX)"><span class="lbl">T4</span></div>
+                        <div id="sb-pad-r4" class="sb-pad-node bottom" title="R4 (UART4 RX - Telemetry from GPS TX)"><span class="lbl">R4</span></div>
+                        <div id="sb-pad-5v-bot" class="sb-pad-node bottom unused" title="5V Power (Unused)"><span class="lbl">5V</span></div>
+                        <div id="sb-pad-vtx" class="sb-pad-node bottom unused" title="VTX (Video Transmitter - Not Required)"><span class="lbl">VTX</span></div>
+                        <div id="sb-pad-gnd-midbot" class="sb-pad-node bottom unused" title="Ground (Unused)"><span class="lbl">G</span></div>
+                        <div id="sb-pad-sbus" class="sb-pad-node bottom unused" title="SBUS Receiver Input (Unused)"><span class="lbl">SBUS</span></div>
+                        <div id="sb-pad-r6" class="sb-pad-node bottom" title="R6 (UART6 RX - Control inputs from Receiver i-BUS)"><span class="lbl">R6</span></div>
+                        <div id="sb-pad-t6" class="sb-pad-node bottom unused" title="T6 / UART6 TX (Unused)"><span class="lbl">T6</span></div>
+                        <div id="sb-pad-3v3" class="sb-pad-node bottom unused" title="3V3 Power (Unused)"><span class="lbl">3V3</span></div>
+                    </div>
+                    <!-- Row 2 (Lower) -->
+                    <div class="sb-bottom-row-2">
+                        <div id="sb-pad-sda" class="sb-pad-node bottom" title="DA (I2C SDA - Compass Magnetic data)"><span class="lbl">DA</span></div>
+                        <div id="sb-pad-scl" class="sb-pad-node bottom" title="CL (I2C SCL - Compass Magnetic clock)"><span class="lbl">CL</span></div>
+                        <div id="sb-pad-4v5-gps" class="sb-pad-node bottom" title="4V5 Power (Powers GPS/Compass Module)"><span class="lbl">4V5</span></div>
+                        <div id="sb-pad-9v" class="sb-pad-node bottom unused" title="9V Power (VTX Power - Not Required)"><span class="lbl">9V</span></div>
+                        <div id="sb-pad-gnd-vtx" class="sb-pad-node bottom unused" title="VTX Ground (Unused)"><span class="lbl">G</span></div>
+                        <div id="sb-pad-t3" class="sb-pad-node bottom unused" title="T3 / UART3 TX (Unused)"><span class="lbl">T3</span></div>
+                        <div id="sb-pad-r3" class="sb-pad-node bottom unused" title="R3 / UART3 RX (Unused)"><span class="lbl">R3</span></div>
+                        <div id="sb-pad-gnd-rx" class="sb-pad-node bottom" title="Ground (FlySky Receiver Ground)"><span class="lbl">G</span></div>
+                        <div id="sb-pad-4v5-rx" class="sb-pad-node bottom" title="4V5 Power (Powers FlySky Receiver)"><span class="lbl">4V5</span></div>
+                        <div id="sb-pad-rs" class="sb-pad-node bottom unused" title="RSSI Input (Unused)"><span class="lbl">RS</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESP32-S3 Payload MCU -->
+            <div id="esp32-board" onclick="selectComp('mavlink', this)">
+                <div class="comp-title" style="margin-bottom: 2px;">ESP32-S3 DevKit</div>
+                <div style="text-align: center; font-size: 8px; color: var(--neon-green); margin-bottom: 10px; text-transform: uppercase;">AeroSense Payload</div>
+
+                <div class="sb-bottom-row-1" style="padding: 0 20px;">
+                    <!-- ESP32 Pins Top side -->
+                    <div id="esp-pin-3v3" class="sb-pad-node top unused" title="3V3 (Unused)"><span class="lbl">3V3</span></div>
+                    <div id="esp-pin-gnd-top" class="sb-pad-node top" title="GND (Reference Ground)"><span class="lbl">GND</span></div>
+                    <div id="esp-pin-vin" class="sb-pad-node top" title="VIN (5V/4.5V BEC Power Input)"><span class="lbl">VIN</span></div>
+                    <div id="esp-pin-gpio34" class="sb-pad-node top" title="GPIO34 (Analog MQ-135 AO input)"><span class="lbl">G34</span></div>
+                </div>
+
+                <div class="sb-center-mcu" style="width: 95px; height: 42px; background: #0c1825; margin: 5px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px solid #00f5d4; border-radius: 4px;">
+                    <h5 style="font-family: 'Space Grotesk', sans-serif; font-size: 9px; color: #fff; line-height: 1.1;">ESP32-S3</h5>
+                    <span style="font-size: 6px; color: var(--neon-blue); letter-spacing: 0.2px; line-height: 1.1;">MAVLink RX/TX</span>
+                </div>
+
+                <div class="sb-bottom-row-1" style="padding: 0 20px;">
+                    <!-- ESP32 Pins Bottom side -->
+                    <div id="esp-pin-gpio33" class="sb-pad-node bottom"><span class="lbl">G33</span></div>
+                    <div id="esp-pin-gpio25" class="sb-pad-node bottom"><span class="lbl">G25</span></div>
+                    <div id="esp-pin-gpio26" class="sb-pad-node bottom"><span class="lbl">G26</span></div>
+                    <div id="esp-pin-gpio27" class="sb-pad-node bottom"><span class="lbl">G27</span></div>
+                </div>
+            </div>
+
+
+
+            <!-- PMS5003 PM Sensor (Payload) -->
+            <div id="comp-pms5003" class="component-block" style="left: 580px; top: 500px; width: 190px;" onclick="selectComp('pms5003', this)">
+                <div class="comp-title">PMS5003 PM Sensor</div>
+                <div class="terminals-row">
+                    <div id="pad-pms-vcc" class="terminal-pad"><span class="pad-lbl">VCC</span></div>
+                    <div id="pad-pms-gnd" class="terminal-pad"><span class="pad-lbl">GND</span></div>
+                    <div id="pad-pms-tx" class="terminal-pad"><span class="pad-lbl">TXD</span></div>
+                    <div id="pad-pms-rx" class="terminal-pad"><span class="pad-lbl">RXD</span></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Column Right: Specs and Configuration details -->
+        <section class="right-panel">
+            
+            <div class="card">
+                <div id="spec-card-header" class="card-title">M8N GPS Connections</div>
+                <div id="spec-card-content">
+                    <table class="spec-table">
+                        <thead>
+                            <tr>
+                                <th>GPS Pin</th>
+                                <th>Wire Color</th>
+                                <th>SpeedyBee Pad</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody id="spec-table-body">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">FC Betaflight Config</div>
+                <div id="fc-config-box" class="cli-box">
+                    <!-- CLI lines injected here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Payload Pin Assignment</div>
+                <div id="payload-config-box" class="cli-box" style="color: var(--neon-blue);">
+                    <!-- ESP32 configuration info -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        // Connection specs mapping terminals, pads, and static wires
+        const connectionMap = {
+            gps: {
+                title: "M8N GPS/Compass Connection Guide",
+                fcCli: "# Enable GPS and I2C in Betaflight CLI\nfeature GPS\nset gps_provider = UBLOX\nset gps_auto_config = ON\n# Configure UART4 (T4/R4) for GPS at 115200 baud\nserial 3 2 115200 57600 0 115200\nsave",
+                espConfig: "// Autopilot connection bypassed for GPS\n// GPS parsed telemetry sourced directly from FC UART4\n// I2C MAG compass routed directly on SDA/SCL lines",
+                table: [
+                    { name: "VCC", color: "Red", type: "Power", fcPad: "4V5 (GPS Row 2)", purpose: "Provides 5V flight power to module" },
+                    { name: "GND", color: "Black", type: "Ground", fcPad: "G (GPS Row 1)", purpose: "Power & Signal ground reference" },
+                    { name: "TX", color: "Yellow", type: "Serial RX", fcPad: "R4 (UART4 RX)", purpose: "Sends GPS coordinate packets to FC" },
+                    { name: "RX", color: "White", type: "Serial TX", fcPad: "T4 (UART4 TX)", purpose: "FC config updates back to GPS" },
+                    { name: "SDA", color: "Green", type: "I2C SDA", fcPad: "DA (I2C SDA)", purpose: "Shares compass magnetic data (shared bus)" },
+                    { name: "SCL", color: "Blue", type: "I2C SCL", fcPad: "CL (I2C SCL)", purpose: "Shares compass magnetic clock line" }
+                ],
+                steps: [
+                    { desc: "Connect GPS VCC (Red) to SpeedyBee bottom 4V5 pad (lower row, 3rd pad).", from: "pad-gps-vcc", to: "sb-pad-4v5-gps", color: "var(--color-vcc)" },
+                    { desc: "Connect GPS GND (Black) to SpeedyBee bottom Ground (G) pad (upper row, 1st pad).", from: "pad-gps-gnd", to: "sb-pad-gnd-gps", color: "var(--color-gnd)" },
+                    { desc: "Connect GPS TX (Yellow) to SpeedyBee R4 pad (UART4 RX).", from: "pad-gps-tx", to: "sb-pad-r4", color: "var(--color-scl)" },
+                    { desc: "Connect GPS RX (White) to SpeedyBee T4 pad (UART4 TX).", from: "pad-gps-rx", to: "sb-pad-t4", color: "var(--color-sda)" },
+                    { desc: "Connect GPS SDA (Green) to SpeedyBee DA pad (I2C SDA).", from: "pad-gps-sda", to: "sb-pad-sda", color: "var(--color-rx)" },
+                    { desc: "Connect GPS SCL (Blue) to SpeedyBee CL pad (I2C SCL).", from: "pad-gps-scl", to: "sb-pad-scl", color: "var(--color-tx)" }
+                ]
+            },
+            elrs: {
+                title: "FlySky FS-iA6B Receiver Connection Guide",
+                fcCli: "# Enable Serial RX on UART6 and set protocol to IBUS in Betaflight CLI\nserial 5 64 0 0 0 0\nset rx_provider = IBUS\nsave",
+                espConfig: "// Receiver connects directly to FC UART6\n// Telemetry streamed down to payload over MAVLink UART2",
+                table: [
+                    { name: "VCC", color: "Red", type: "Power", fcPad: "4V5 (Row 2)", purpose: "Powers receiver from 4.5V bus (powered by USB or battery)" },
+                    { name: "GND", color: "Black", type: "Ground", fcPad: "G (Row 2)", purpose: "Common ground reference" },
+                    { name: "i-BUS", color: "Yellow", type: "i-BUS Out", fcPad: "R6 (UART6 RX)", purpose: "Transmits channel data to flight controller" }
+                ],
+                steps: [
+                    { desc: "Connect Receiver VCC (Red / Middle Pin) to SpeedyBee bottom 4V5 pad (lower row, 9th pad).", from: "pad-rx-vcc", to: "sb-pad-4v5-rx", color: "var(--color-vcc)" },
+                    { desc: "Connect Receiver GND (Black / Bottom Pin) to SpeedyBee bottom G pad (lower row, 8th pad).", from: "pad-rx-gnd", to: "sb-pad-gnd-rx", color: "var(--color-gnd)" },
+                    { desc: "Connect Receiver i-BUS (Yellow / Top Signal Pin) to SpeedyBee R6 pad (UART6 RX).", from: "pad-rx-ibus", to: "sb-pad-r6", color: "var(--color-scl)" }
+                ]
+            },
+
+            mavlink: {
+                title: "Autopilot MAVLink Telemetry Connection Guide",
+                fcCli: "# Configure UART2 (T2/R2) for MAVLink Telemetry at 57600 baud\n# under ArduPilot / PX4 setup\n# Ensure SERIAL2_BAUD = 57 and SERIAL2_PROTOCOL = 2",
+                espConfig: "// MAVLink Connection config:\n// UART1 on pins GPIO33 (RX1) and GPIO25 (TX1)\n// Direct telemetry parse extracts coordinates without standalone GPS",
+                table: [
+                    { name: "RX1", color: "Purple", type: "ESP32 RX", fcPad: "T2 (UART2 TX)", purpose: "Receives GLOBAL_POSITION_INT telemetry from FC" },
+                    { name: "TX1", color: "White", type: "ESP32 TX", fcPad: "R2 (UART2 RX)", purpose: "Transmits obstacle distance vectors to FC" },
+                    { name: "GND", color: "Black", type: "Ground", fcPad: "G (UART2 GND)", purpose: "Common ground reference between boards" },
+                    { name: "VIN", color: "Red", type: "5V Power", fcPad: "4V5 (UART2 BEC)", purpose: "Powers ESP32 payload from flight controller 4.5V bus" }
+                ],
+                steps: [
+                    { desc: "Connect ESP32 RX1 (GPIO33) to SpeedyBee top-inner T2 pad.", from: "esp-pin-gpio33", to: "sb-pad-t2", color: "var(--color-rx)" },
+                    { desc: "Connect ESP32 TX1 (GPIO25) to SpeedyBee top-inner R2 pad.", from: "esp-pin-gpio25", to: "sb-pad-r2", color: "var(--color-tx)" },
+                    { desc: "Connect ESP32 GND (Black) to SpeedyBee top-inner G pad next to 4V5.", from: "esp-pin-gnd-top", to: "sb-pad-gnd-topinner", color: "var(--color-gnd)" },
+                    { desc: "Connect ESP32 VIN (Red) to SpeedyBee top-inner 4V5 pad next to R2.", from: "esp-pin-vin", to: "sb-pad-4v5-topinner", color: "var(--color-vcc)" }
+                ]
+            },
+            pms5003: {
+                title: "PMS5003 PM Sensor Connection Guide",
+                fcCli: "# Payload internal connection\n# No flight controller Betaflight settings required",
+                espConfig: "// Configured in config.json:\n// UART2 mapped to GPIO26 (RX2) and GPIO27 (TX2)\n// Hardware serial eliminates SoftwareSerial load",
+                table: [
+                    { name: "VCC", color: "Red", type: "5V Power", fcPad: "ESP32 VIN (5V)", purpose: "Powers sensor fan and internal laser diode" },
+                    { name: "GND", color: "Black", type: "Ground", fcPad: "ESP32 GND", purpose: "Signal and power ground loop" },
+                    { name: "TXD", color: "Yellow", type: "UART RX", fcPad: "GPIO26 (RX2)", purpose: "Sends particulate matter measurements to ESP32" },
+                    { name: "RXD", color: "Green", type: "UART TX", fcPad: "GPIO27 (TX2)", purpose: "ESP32 control/configuration changes" }
+                ],
+                steps: [
+                    { desc: "Connect PMS5003 VCC (Red) to ESP32 VIN (5V power rail).", from: "pad-pms-vcc", to: "esp-pin-vin", color: "var(--color-vcc)" },
+                    { desc: "Connect PMS5003 GND (Black) to ESP32 GND pin.", from: "pad-pms-gnd", to: "esp-pin-gnd-top", color: "var(--color-gnd)" },
+                    { desc: "Connect PMS5003 TXD (Yellow) to ESP32 GPIO26 (RX2 pin).", from: "pad-pms-tx", to: "esp-pin-gpio26", color: "var(--color-rx)" },
+                    { desc: "Connect PMS5003 RXD (Green) to ESP32 GPIO27 (TX2 pin).", from: "pad-pms-rx", to: "esp-pin-gpio27", color: "var(--color-tx)" }
+                ]
+            },
+            mq135: {
+                title: "MQ-135 Gas Sensor Connection Guide",
+                fcCli: "# Payload internal analog connection\n# Requires analog input configuration inside payload",
+                espConfig: "// MQ-135 resistor divider network:\n// Mapped directly to internal ADC1_CH6 (GPIO34)\n// Divider protects ESP32 from 5V outputs",
+                table: [
+                    { name: "VCC", color: "Red", type: "5V Power", fcPad: "ESP32 VIN (5V)", purpose: "Heats sensor filament (draws ~150mA)" },
+                    { name: "GND", color: "Black", type: "Ground", fcPad: "ESP32 GND", purpose: "Filament and analog ground return" },
+                    { name: "AO", color: "Yellow", type: "Analog Out", fcPad: "GPIO34 (ADC1)", purpose: "Analog raw concentration output (0-3.3V after divider)" }
+                ],
+                steps: [
+                    { desc: "Connect MQ-135 VCC (Red) to ESP32 VIN (5V power rail).", from: "pad-mq-vcc", to: "esp-pin-vin", color: "var(--color-vcc)" },
+                    { desc: "Connect MQ-135 GND (Black) to ESP32 GND pin.", from: "pad-mq-gnd", to: "esp-pin-gnd-top", color: "var(--color-gnd)" },
+                    { desc: "Connect MQ-135 AO (Yellow) to Resistor Divider input, and divider output to ESP32 GPIO34.", from: "pad-mq-ao", to: "esp-pin-gpio34", color: "var(--color-control)" }
+                ]
+            }
+        };
+
+        let activeModule = 'gps';
+        let activeStepIndex = null;
+
+        // Select active component/module and highlight pads/wires
+        function selectComp(compKey, element) {
+            activeModule = compKey;
+            activeStepIndex = null;
+            
+            // Toggle active classes on buttons
+            document.querySelectorAll('.btn-item').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            let targetBtn = element;
+            if (!targetBtn) {
+                // Find button by compKey
+                targetBtn = Array.from(document.querySelectorAll('.btn-item')).find(btn => {
+                    const onclickStr = btn.getAttribute('onclick') || '';
+                    return onclickStr.includes(`'${compKey}'`);
+                });
+            }
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+            }
+
+            // Dim inactive component blocks on schematic canvas
+            document.querySelectorAll('.component-block').forEach(cb => {
+                cb.classList.remove('active-comp');
+                cb.classList.add('dimmed-comp');
+            });
+            const activeBlock = document.getElementById('comp-' + compKey);
+            if (activeBlock) {
+                activeBlock.classList.remove('dimmed-comp');
+                activeBlock.classList.add('active-comp');
+            }
+
+            // Dim boards conditionally
+            const sbBoard = document.getElementById('speedybee-board');
+            const espBoard = document.getElementById('esp32-board');
+            
+            if (compKey === 'mavlink') {
+                sbBoard.classList.remove('dimmed-comp');
+                espBoard.classList.remove('dimmed-comp');
+            } else if (['pms5003', 'mq135'].includes(compKey)) {
+                sbBoard.classList.add('dimmed-comp');
+                espBoard.classList.remove('dimmed-comp');
+            } else {
+                sbBoard.classList.remove('dimmed-comp');
+                espBoard.classList.add('dimmed-comp');
+            }
+
+            // Fill spec info panel
+            const db = connectionMap[compKey];
+            document.getElementById('spec-card-header').innerText = db.title;
+            document.getElementById('fc-config-box').innerText = db.fcCli;
+            document.getElementById('payload-config-box').innerText = db.espConfig;
+
+            // Fill Pin mapping table
+            let tableHtml = '';
+            db.table.forEach(row => {
+                tableHtml += `
+                    <tr>
+                        <td><strong>${row.name}</strong></td>
+                        <td><span class="color-dot" style="background: ${row.color.toLowerCase()}"></span>${row.color}</td>
+                        <td><span class="wire-tag" style="background: rgba(255,255,255,0.05); color: #fff;">${row.fcPad}</span></td>
+                        <td>${row.purpose}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('spec-table-body').innerHTML = tableHtml;
+
+            // Fill connection step checklists
+            document.getElementById('step-card-title').innerText = `${db.title.replace(" Guide", "")} Checklist`;
+            let stepsHtml = '';
+            db.steps.forEach((step, idx) => {
+                stepsHtml += `
+                    <div class="step-item" id="step-${idx}" onclick="focusStep(${idx})">
+                        <strong>Step ${idx + 1}:</strong> ${step.desc}
+                    </div>
+                `;
+            });
+            document.getElementById('step-list-container').innerHTML = stepsHtml;
+
+            drawWiresAndHighlight();
+        }
+
+        // Draw connections dynamically as clean static orthogonal lines, and highlight pads
+        function drawWiresAndHighlight() {
+            const svg = document.getElementById('svg-wires-container');
+            const containerRect = document.getElementById('schematic-viewport').getBoundingClientRect();
+            
+            svg.innerHTML = '';
+            
+            // Remove previous pad highlights
+            document.querySelectorAll('.highlight-pad').forEach(pad => {
+                pad.classList.remove('highlight-pad');
+                pad.style.removeProperty('--highlight-color');
+            });
+
+            const db = connectionMap[activeModule];
+            if (!db) return;
+
+            db.steps.forEach((step, idx) => {
+                const fromPin = document.getElementById(step.from);
+                const toPin = document.getElementById(step.to);
+                
+                if (!fromPin || !toPin) return;
+
+                const fromRect = fromPin.getBoundingClientRect();
+                const toRect = toPin.getBoundingClientRect();
+
+                // Coordinates relative to canvas
+                const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+                const x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+
+                // Orthogonal routing formula
+                let d;
+                const isStepActive = (activeStepIndex === null || activeStepIndex === idx);
+                
+                // Route wires orthogonally to look clean and structured
+                if (Math.abs(y1 - y2) > 20 && Math.abs(x1 - x2) > 20) {
+                    const midX = (x1 + x2) / 2;
+                    d = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+                } else {
+                    d = `M ${x1} ${y1} L ${x2} ${y2}`;
+                }
+
+                // Append main wire line path
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('class', `wire-path ${isStepActive ? 'active' : ''}`);
+                path.setAttribute('stroke', step.color);
+                path.style.setProperty('--shadow-color', step.color);
+                svg.appendChild(path);
+
+                // Highlight active pad contacts
+                if (isStepActive) {
+                    fromPin.classList.add('highlight-pad');
+                    fromPin.style.setProperty('--highlight-color', step.color);
+                    
+                    toPin.classList.add('highlight-pad');
+                    toPin.style.setProperty('--highlight-color', step.color);
+                }
+            });
+        }
+
+        // Highlight a single step and dim others
+        function focusStep(stepIdx) {
+            activeStepIndex = stepIdx;
+            
+            // Toggle active classes on steps
+            document.querySelectorAll('.step-item').forEach((step, idx) => {
+                step.classList.remove('active-step');
+                if (idx === stepIdx) step.classList.add('active-step');
+            });
+
+            drawWiresAndHighlight();
+        }
+
+        // Initial boot
+        window.addEventListener('load', () => {
+            selectComp('gps', null);
+        });
+        window.addEventListener('resize', drawWiresAndHighlight);
+    </script>
+</body>
+</html>
