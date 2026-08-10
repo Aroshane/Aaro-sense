@@ -18,15 +18,72 @@ import {
 
 const API_BASE = window.location.origin === 'http://localhost:5173' ? 'http://localhost:5001/api' : '/api';
 
+const MOCK_TELEMETRY = Array.from({ length: 35 }, (_, i) => {
+  const t = Date.now() / 1000 - (35 - i) * 2;
+  const alt = Math.min(50, 15 + Math.sin(i / 3) * 15 + i * 0.8);
+  return {
+    timestamp: t,
+    lat: 8.8932 + Math.sin(i / 5) * 0.0004,
+    lon: 76.6141 + Math.cos(i / 5) * 0.0004,
+    alt_m: parseFloat(alt.toFixed(1)),
+    pm25: parseFloat((25 + Math.sin(i / 2) * 12 + (alt > 30 ? 25 : 5)).toFixed(1)),
+    pm10: parseFloat((45 + Math.sin(i / 2) * 20 + (alt > 30 ? 40 : 10)).toFixed(1)),
+    temperature: parseFloat((28.5 + alt * 0.05 + (i % 3) * 0.2).toFixed(1)),
+    humidity: parseFloat((65.0 - alt * 0.1).toFixed(1)),
+    pressure: parseFloat((1012.0 - alt * 0.12).toFixed(1)),
+    voc: parseFloat((1.2 + (i % 5) * 0.1).toFixed(2)),
+    mq135_raw: 195 + (i % 10) * 2,
+    quality_flag: 0,
+    gps_quality: 3
+  };
+});
+
+const MOCK_STATS = {
+  points: 154,
+  duration: '12.5 min',
+  alt_range: '15.0 - 50.0 m',
+  pm25_mean: '34.2 µg/m³',
+  pm25_max: '68.5 µg/m³',
+  temp_mean: '29.1 °C',
+  hum_mean: '63.4 %'
+};
+
+const DEFAULT_CONFIG = {
+  drone_id: "AEROSENSE-QUAD-01",
+  firmware_version: "2.4.0-PROD",
+  baud_rate: 115200,
+  telemetry_interval_ms: 1000,
+  sensors: {
+    bme280: { enabled: true, address: "0x76", i2c_bus: 1 },
+    sds011: { enabled: true, uart_port: "/dev/ttyS0", sample_sec: 1 },
+    vl53l1x: { enabled: true, address: "0x29", timing_budget_ms: 50 },
+    mq135: { enabled: true, adc_pin: 34, R0_kOhm: 76.8 }
+  },
+  lora: {
+    frequency_mhz: 868.0,
+    tx_power_dbm: 14,
+    bandwidth_khz: 125.0,
+    spreading_factor: 7,
+    coding_rate: 5
+  },
+  thresholds: {
+    pm25_warning: 60.0,
+    pm25_critical: 120.0,
+    temp_warning: 38.0,
+    battery_min_volts: 14.2
+  },
+  storage: {
+    sd_mount_point: "/sd",
+    log_file_format: "CSV",
+    max_file_size_mb: 50
+  }
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [telemetry, setTelemetry] = useState([]);
-  const [stats, setStats] = useState({
-    points: 0, duration: '0.0 min', alt_range: '0-0 m',
-    pm25_mean: '0.0 µg/m³', pm25_max: '0.0 µg/m³',
-    temp_mean: '0.0 °C', hum_mean: '0.0 %'
-  });
-  const [config, setConfig] = useState(null);
+  const [telemetry, setTelemetry] = useState(MOCK_TELEMETRY);
+  const [stats, setStats] = useState(MOCK_STATS);
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [apiOnline, setApiOnline] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
 
@@ -34,21 +91,24 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Status Check
         const statusRes = await fetch(`${API_BASE}/status`);
+        if (!statusRes.ok) throw new Error(`HTTP ${statusRes.status}`);
         const statusData = await statusRes.json();
-        setApiOnline(statusData.status === 'online');
+        const isOnline = statusData.status === 'online';
+        setApiOnline(isOnline);
 
-        if (statusData.status === 'online') {
-          // Telemetry Check
+        if (isOnline) {
           const telRes = await fetch(`${API_BASE}/telemetry?limit=150`);
           const telData = await telRes.json();
-          setTelemetry(telData);
+          if (Array.isArray(telData) && telData.length > 0) {
+            setTelemetry(telData);
+          }
 
-          // Stats Check
           const statsRes = await fetch(`${API_BASE}/stats`);
           const statsData = await statsRes.json();
-          setStats(statsData);
+          if (statsData.points) {
+            setStats(statsData);
+          }
         }
       } catch (err) {
         setApiOnline(false);
@@ -65,10 +125,12 @@ function App() {
     const fetchConfig = async () => {
       try {
         const res = await fetch(`${API_BASE}/config`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setConfig(data);
+        if (data.drone_id) setConfig(data);
       } catch (err) {
-        console.error('Failed to load payload config', err);
+        console.warn('Backend API unreachable, using default payload config', err);
+        setConfig(prev => prev || DEFAULT_CONFIG);
       }
     };
     fetchConfig();

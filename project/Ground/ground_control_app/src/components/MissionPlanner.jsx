@@ -19,24 +19,60 @@ function MissionPlanner({ apiBase }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
+  const generateGridLocal = (lat, lon, width = 200, height = 200, spacing = 15, alts = [15, 30, 50]) => {
+    const DEG_LAT_M = 111139.0;
+    const DEG_LON_M = 111139.0 * Math.cos(lat * Math.PI / 180.0);
+    
+    const wps = [
+      { seq: 0, command: 16, frame: 0, lat, lon, alt: 0.0, p1: 0, p2: 0, p3: 0, p4: 0, autocontinue: 1 },
+      { seq: 1, command: 22, frame: 3, lat, lon, alt: alts[0] || 15.0, p1: 0, p2: 0, p3: 0, p4: 0, autocontinue: 1 }
+    ];
+    
+    let seq = 2;
+    const nLanes = Math.max(1, Math.floor(width / spacing));
+    
+    for (const alt of alts) {
+      for (let i = 0; i <= nLanes; i++) {
+        const x = i * spacing - width / 2.0;
+        const yStart = (i % 2 === 0) ? -height / 2.0 : height / 2.0;
+        const yEnd = (i % 2 === 0) ? height / 2.0 : -height / 2.0;
+        
+        const lat1 = parseFloat((lat + (yStart / DEG_LAT_M)).toFixed(7));
+        const lon1 = parseFloat((lon + (x / DEG_LON_M)).toFixed(7));
+        const lat2 = parseFloat((lat + (yEnd / DEG_LAT_M)).toFixed(7));
+        const lon2 = parseFloat((lon + (x / DEG_LON_M)).toFixed(7));
+        
+        wps.push({ seq: seq++, command: 16, frame: 3, lat: lat1, lon: lon1, alt, p1: 0, p2: 0, p3: 0, p4: 0, autocontinue: 1 });
+        wps.push({ seq: seq++, command: 16, frame: 3, lat: lat2, lon: lon2, alt, p1: 0, p2: 0, p3: 0, p4: 0, autocontinue: 1 });
+      }
+    }
+    
+    wps.push({ seq: seq++, command: 20, frame: 3, lat, lon, alt: alts[alts.length - 1] || 50.0, p1: 0, p2: 0, p3: 0, p4: 0, autocontinue: 1 });
+    return wps;
+  };
+
   // Load waypoints from API
   const fetchWaypoints = async () => {
     try {
       const res = await fetch(`${apiBase}/mission/waypoints`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data.waypoints) {
+      if (data.waypoints && data.waypoints.length > 0) {
         setWaypoints(data.waypoints);
         setOrigin(data.origin || [8.8932, 76.6141]);
-        
-        // Sync parameters with loaded origin if not manually edited
         setParams(prev => ({
           ...prev,
           origin_lat: data.origin ? data.origin[0] : prev.origin_lat,
           origin_lon: data.origin ? data.origin[1] : prev.origin_lon
         }));
+        return;
       }
+      throw new Error('No waypoints');
     } catch (err) {
-      console.error('Failed to load waypoints', err);
+      console.warn('Backend API unreachable, generating client-side survey waypoints', err);
+      const fallbackWps = generateGridLocal(8.8932, 76.6141, 200, 200, 15, [15, 30, 50]);
+      setWaypoints(fallbackWps);
+      setOrigin([8.8932, 76.6141]);
     }
   };
 
@@ -163,15 +199,29 @@ function MissionPlanner({ apiBase }) {
           speed_ms: parseFloat(params.speed_ms)
         })
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.success) {
-        setStatusMsg('Grid mission created successfully! Reloading...');
+        setStatusMsg('Grid mission created successfully!');
         await fetchWaypoints();
-      } else {
-        setStatusMsg(`Failed: ${data.error}`);
+        return;
       }
+      throw new Error(data.error || 'Server error');
     } catch (err) {
-      setStatusMsg(`Connection Error: ${err.message}`);
+      console.warn('API unreachable, generating grid locally in client mode', err);
+      const localLat = parseFloat(params.origin_lat) || 8.8932;
+      const localLon = parseFloat(params.origin_lon) || 76.6141;
+      const localWps = generateGridLocal(
+        localLat,
+        localLon,
+        parseFloat(params.grid_width) || 200,
+        parseFloat(params.grid_height) || 200,
+        parseFloat(params.lane_spacing) || 15,
+        parsedAlts.length ? parsedAlts : [15, 30, 50]
+      );
+      setWaypoints(localWps);
+      setOrigin([localLat, localLon]);
+      setStatusMsg('Grid mission generated locally (Vercel Client Mode)!');
     } finally {
       setIsGenerating(false);
       setTimeout(() => setStatusMsg(''), 4000);
