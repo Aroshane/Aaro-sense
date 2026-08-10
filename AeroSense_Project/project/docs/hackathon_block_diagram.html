@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroSense — Hardware & System Block Diagram</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-canvas: #f8fafc;
+            --color-uav-bg: #eff6ff;
+            --color-uav-border: #3b82f6;
+            --color-payload-bg: #f5f3ff;
+            --color-payload-border: #8b5cf6;
+            --color-gs-bg: #f0fdf4;
+            --color-gs-border: #10b981;
+            --color-power-bg: #fff5f5;
+            --color-power-border: #ef4444;
+            
+            --node-bg: #ffffff;
+            --node-border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-mute: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+        }
+
+        /* ── Header ── */
+        header {
+            width: 1200px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-title h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            color: var(--text-mute);
+            margin-top: 2px;
+        }
+
+        .badge {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ── Diagram Container ── */
+        #diagram-canvas {
+            width: 1200px;
+            height: 750px;
+            position: relative;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        /* ── Subsystem Boxes (Groups) ── */
+        .subgraph-box {
+            position: absolute;
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .subgraph-header {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: #ffffff;
+            padding: 0 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .subgraph-box.power {
+            background: var(--color-power-bg);
+            border: 2px dashed var(--color-power-border);
+        }
+        .subgraph-box.power .subgraph-header { color: var(--color-power-border); }
+
+        .subgraph-box.uav {
+            background: var(--color-uav-bg);
+            border: 2px dashed var(--color-uav-border);
+        }
+        .subgraph-box.uav .subgraph-header { color: var(--color-uav-border); }
+
+        .subgraph-box.payload {
+            background: var(--color-payload-bg);
+            border: 2px dashed var(--color-payload-border);
+        }
+        .subgraph-box.payload .subgraph-header { color: var(--color-payload-border); }
+
+        .subgraph-box.gs {
+            background: var(--color-gs-bg);
+            border: 2px dashed var(--color-gs-border);
+        }
+        .subgraph-box.gs .subgraph-header { color: var(--color-gs-border); }
+
+        /* ── Component Cards (Nodes) ── */
+        .node {
+            position: absolute;
+            background: var(--node-bg);
+            border: 1.5px solid var(--node-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 6px 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            z-index: 20;
+        }
+
+        .node h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .node p {
+            font-size: 10px;
+            color: var(--text-mute);
+            margin-top: 1px;
+        }
+
+        /* Group-specific Node styling */
+        .node.node-mcu {
+            border: 2px solid var(--color-payload-border);
+            background: #faf5ff;
+        }
+        .node.node-mcu h3 {
+            font-size: 13px;
+        }
+
+        /* ── SVG Connection Layer ── */
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .conn-path {
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        /* ── Label Mask & Styling ── */
+        .label-bg {
+            fill: #ffffff;
+        }
+
+        .label-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            fill: #475569;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Banner -->
+    <header>
+        <div class="header-title">
+            <h1>AeroSense — Hardware System Block Diagram</h1>
+            <p>Consolidated schematic layout showing power rails, signal links, and data ingestion loops</p>
+        </div>
+    </header>
+
+    <!-- Canvas -->
+    <div id="diagram-canvas">
+        
+        <!-- SVG Connections Layer -->
+        <svg class="svg-overlay">
+            <defs>
+                <!-- Arrowheads -->
+                <marker id="arrow-power" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--color-power-border)"/>
+                </marker>
+                <marker id="arrow-signal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+                </marker>
+                <marker id="arrow-rf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f97316"/>
+                </marker>
+            </defs>
+
+            <!-- ================= POWER LINES (RED) ================= -->
+            <!-- LiPo to PDB -->
+            <path d="M 160 150 L 160 190" class="conn-path" stroke="var(--color-power-border)" stroke-width="2.5" marker-end="url(#arrow-power)"/>
+            
+            <!-- PDB to BEC -->
+            <path d="M 160 240 L 160 280" class="conn-path" stroke="var(--color-power-border)" stroke-width="2.5" marker-end="url(#arrow-power)"/>
+
+            <!-- PDB to ESCs/Motors (Direct Battery Power) -->
+            <path d="M 40 215 L 30 215 L 30 580 L 40 580" class="conn-path" stroke="var(--color-power-border)" stroke-width="2.5" marker-end="url(#arrow-power)"/>
+            
+            <!-- BEC to Flight Controller -->
+            <path d="M 160 340 L 160 410" class="conn-path" stroke="var(--color-power-border)" stroke-width="2.5" marker-end="url(#arrow-power)"/>
+
+            <!-- BEC to ESP32 MCU (5V VIN) -->
+            <path d="M 260 310 L 290 310 L 290 395 L 480 395" class="conn-path" stroke="var(--color-power-border)" stroke-width="2" marker-end="url(#arrow-power)"/>
+
+            <!-- BEC 5V Rail split to Sensors (VCC lines) -->
+            <path d="M 290 310 L 340 310 L 340 225 L 360 225" class="conn-path" stroke="var(--color-power-border)" stroke-width="1.5" marker-end="url(#arrow-power)"/>
+            <path d="M 340 310 L 340 145 L 620 145" class="conn-path" stroke="var(--color-power-border)" stroke-width="1.5" marker-end="url(#arrow-power)"/>
+
+            <!-- Labels for Power lines -->
+            <g class="label-group">
+                <rect x="110" y="160" width="100" height="15" class="label-bg"/>
+                <text x="160" y="171" class="label-text" fill="var(--color-power-border)">Unregulated Batt</text>
+            </g>
+            <g class="label-group">
+                <rect x="115" y="250" width="90" height="15" class="label-bg"/>
+                <text x="160" y="261" class="label-text" fill="var(--color-power-border)">Unregulated Input</text>
+            </g>
+            <g class="label-group">
+                <rect x="115" y="365" width="90" height="15" class="label-bg"/>
+                <text x="160" y="376" class="label-text" fill="var(--color-power-border)">BEC 5V/12V Output</text>
+            </g>
+            <g class="label-group">
+                <rect x="310" y="380" width="90" height="15" class="label-bg"/>
+                <text x="355" y="391" class="label-text" fill="var(--color-power-border)">5V Payload Power</text>
+            </g>
+            <g class="label-group">
+                <rect x="2" y="320" width="25" height="40" class="label-bg"/>
+                <text x="12" y="345" class="label-text" fill="var(--color-power-border)" transform="rotate(-90 12 345)">11.1V - 22.2V Direct</text>
+            </g>
+
+            <!-- ================= DATA LINES (BLUE / GREY) ================= -->
+            <!-- FC to ESC PWM -->
+            <path d="M 160 470 L 160 550" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="120" y="500" width="80" height="15" class="label-bg"/>
+                <text x="160" y="511" class="label-text">PWM / DShot</text>
+            </g>
+
+            <!-- FC Autopilot to ESP32 MCU (MAVLink UART) -->
+            <path d="M 260 440 L 400 440 L 400 415 L 480 415" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="305" y="420" width="150" height="15" class="label-bg"/>
+                <text x="380" y="431" class="label-text">MAVLink UART1 (57600 baud)</text>
+            </g>
+
+            <!-- BME280 Climate to ESP32 (I2C) -->
+            <path d="M 450 170 L 450 380 L 480 380" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="380" y="340" width="80" height="15" class="label-bg"/>
+                <text x="420" y="351" class="label-text">I2C (100 kHz)</text>
+            </g>
+
+            <!-- PMS5003 Laser Particle to ESP32 (UART2) -->
+            <path d="M 715 170 L 715 380 L 680 380" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="690" y="340" width="90" height="15" class="label-bg"/>
+                <text x="735" y="351" class="label-text">UART2 (9600 baud)</text>
+            </g>
+
+            <!-- MQ-135 to Resistor Divider (Analog Out 5V) -->
+            <path d="M 450 250 L 450 280" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <!-- Resistor Divider to ESP32 (Analog Input 3.3V) -->
+            <path d="M 450 325 L 450 395 L 480 395" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="385" y="255" width="60" height="15" class="label-bg"/>
+                <text x="415" y="266" class="label-text">Raw AOUT</text>
+            </g>
+            <g class="label-group">
+                <rect x="390" y="360" width="55" height="15" class="label-bg"/>
+                <text x="417" y="371" class="label-text">ADC 3.23V</text>
+            </g>
+
+            <!-- SX1276 LoRa Payload to ESP32 (Shared SPI Bus) -->
+            <path d="M 580 470 L 580 390" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="535" y="420" width="90" height="15" class="label-bg"/>
+                <text x="580" y="431" class="label-text">SPI (CS GPIO5)</text>
+            </g>
+
+            <!-- ================= WIRELESS TELEMETRY (ORANGE) ================= -->
+            <!-- SX1276 LoRa to Ground LoRa Receiver (RF Link) -->
+            <path d="M 670 495 C 780 495, 820 150, 920 150" class="conn-path" stroke="#f97316" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrow-rf)"/>
+            
+            <!-- Lightning icon placeholder or RF Link label -->
+            <g class="label-group">
+                <rect x="805" y="300" width="105" height="25" class="label-bg" stroke="#f97316" rx="4"/>
+                <text x="857" y="316" class="label-text" fill="#f97316" style="font-weight: 700;">📡 433 MHz LoRa</text>
+            </g>
+
+            <!-- ================= GROUND STATION FLOW ================= -->
+            <!-- LoRa Receiver to Ingest Serial -->
+            <path d="M 1020 180 L 1020 230" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="960" y="195" width="120" height="15" class="label-bg"/>
+                <text x="1020" y="206" class="label-text">USB Serial (MsgPack)</text>
+            </g>
+
+            <!-- Ingest to SQLite -->
+            <path d="M 1020 280 L 1020 330" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="965" y="295" width="110" height="15" class="label-bg"/>
+                <text x="1020" y="306" class="label-text">SQL Query Ingestion</text>
+            </g>
+
+            <!-- SQLite to Dash Server -->
+            <path d="M 1020 380 L 1020 430" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="970" y="395" width="100" height="15" class="label-bg"/>
+                <text x="1020" y="406" class="label-text">SQLite Query API</text>
+            </g>
+
+            <!-- Dash Server to Web Browser -->
+            <path d="M 1020 480 L 1020 530" class="conn-path" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow-signal)"/>
+            <g class="label-group">
+                <rect x="970" y="495" width="100" height="15" class="label-bg"/>
+                <text x="1020" y="506" class="label-text">HTTP / Web Sockets</text>
+            </g>
+        </svg>
+
+        <!-- ── Subsystem Group 1: Power System ── -->
+        <div class="subgraph-box power" style="left: 20px; top: 60px; width: 280px; height: 300px;">
+            <div class="subgraph-header">Power System</div>
+            
+            <div id="node-battery" class="node" style="left: 40px; top: 30px; width: 200px; height: 50px;">
+                <h3>3S-6S LiPo Battery</h3>
+                <p>Quadcopter main battery feed</p>
+            </div>
+
+            <div id="node-pdb" class="node" style="left: 40px; top: 120px; width: 200px; height: 50px;">
+                <h3>F450 Frame PDB</h3>
+                <p>Power Distribution Board</p>
+            </div>
+
+            <div id="node-bec" class="node" style="left: 40px; top: 210px; width: 200px; height: 60px;">
+                <h3>Dual BEC Module</h3>
+                <p>5V and 12V Buck Regulator</p>
+            </div>
+        </div>
+
+        <!-- ── Subsystem Group 2: Rotary-Wing UAV Guidance ── -->
+        <div class="subgraph-box uav" style="left: 20px; top: 380px; width: 280px; height: 340px;">
+            <div class="subgraph-header">Rotary-Wing UAV System</div>
+            
+            <div id="node-fc" class="node" style="left: 40px; top: 30px; width: 200px; height: 60px;">
+                <h3>SpeedyBee Flight Controller</h3>
+                <p>Runs ArduPilot Autopilot firmware</p>
+            </div>
+
+            <div id="node-motors" class="node" style="left: 40px; top: 170px; width: 200px; height: 60px;">
+                <h3>ESCs & Brushless Motors</h3>
+                <p>F450 propulsion system (4 channels)</p>
+            </div>
+        </div>
+
+        <!-- ── Subsystem Group 3: AeroSense ESP32 Payload ── -->
+        <div class="subgraph-box payload" style="left: 320px; top: 60px; width: 520px; height: 660px;">
+            <div class="subgraph-header">AeroSense ESP32 Payload</div>
+
+            <!-- Top Row Sensors -->
+            <div id="node-bme280" class="node" style="left: 40px; top: 40px; width: 180px; height: 50px;">
+                <h3>BME280 Climate Sensor</h3>
+                <p>I2C temperature, humidity, pressure</p>
+            </div>
+
+            <div id="node-pms5003" class="node" style="left: 300px; top: 40px; width: 180px; height: 50px;">
+                <h3>PMS5003 Laser PM Sensor</h3>
+                <p>UART PM2.5 and PM10 metrics</p>
+            </div>
+
+            <!-- Gas Sensor & Level Shifter -->
+            <div id="node-mq135" class="node" style="left: 40px; top: 120px; width: 180px; height: 50px;">
+                <h3>MQ-135 Gas Sensor</h3>
+                <p>Analog VOC gases (CO2/NOx)</p>
+            </div>
+
+            <div id="node-divider" class="node" style="left: 40px; top: 205px; width: 180px; height: 45px; border: 1.5px dashed var(--color-power-border); background: #fff5f5;">
+                <h3>Resistor Level Divider</h3>
+                <p>1.8 kΩ + 3.3 kΩ (Scale to 3.23V)</p>
+            </div>
+
+            <!-- CENTRAL MCU -->
+            <div id="node-mcu" class="node node-mcu" style="left: 160px; top: 310px; width: 200px; height: 80px;">
+                <h3>ESP32 Dual-Core MCU</h3>
+                <p style="font-weight: 600; color: var(--color-payload-border);">Core Controller (240 MHz)</p>
+                <p>Asynchronous multi-thread mapping</p>
+            </div>
+
+            <!-- Bottom Row: LoRa Transceiver (Centered) -->
+            <div id="node-lora-tx" class="node" style="left: 170px; top: 470px; width: 180px; height: 50px;">
+                <h3>SX1276 Ra-02 LoRa</h3>
+                <p>Transmits binary MessagePack frames</p>
+            </div>
+        </div>
+
+        <!-- ── Subsystem Group 4: Ground Station System ── -->
+        <div class="subgraph-box gs" style="left: 860px; top: 60px; width: 320px; height: 660px;">
+            <div class="subgraph-header">Ground Control Station (GCS)</div>
+
+            <div id="node-lora-rx" class="node" style="left: 60px; top: 40px; width: 200px; height: 60px;">
+                <h3>SX1276 Ground Receiver</h3>
+                <p>Receives 433 MHz telemetry frames</p>
+            </div>
+
+            <div id="node-ingest" class="node" style="left: 60px; top: 150px; width: 200px; height: 60px;">
+                <h3>Python Ingest Workstation</h3>
+                <p>Serial reader & MsgPack decoder</p>
+            </div>
+
+            <div id="node-db" class="node" style="left: 60px; top: 260px; width: 200px; height: 60px;">
+                <h3>SQLite Database</h3>
+                <p>Logs flight time-series points locally</p>
+            </div>
+
+            <div id="node-server" class="node" style="left: 60px; top: 370px; width: 200px; height: 60px;">
+                <h3>Plotly Dash Web Server</h3>
+                <p>Serves spatial & 3D telemetry</p>
+            </div>
+
+            <div id="node-browser" class="node" style="left: 60px; top: 480px; width: 200px; height: 60px;">
+                <h3>Web Browser UI Cockpit</h3>
+                <p>Dashboard telemetry cockpit</p>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroSense — Step-by-Step Interactive Wiring Schematic</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-canvas: #59a5e8;
+            --pcb-blue: #0b2240;
+            --pcb-green: #0b3c2a;
+            --pcb-purple: #2c0b40;
+            --pcb-grey: #1c232b;
+            
+            --wire-vcc: #ef4444;    /* Red */
+            --wire-gnd: #94a3b8;    /* light gray for contrast */
+            --wire-sda: #c084fc;    /* Purple */
+            --wire-scl: #f59e0b;    /* Yellow/Amber */
+            --wire-tx: #60a5fa;     /* light blue */
+            --wire-rx: #34d399;     /* light green */
+            --wire-spi: #f472b6;    /* Pink */
+            --wire-gpio: #38bdf8;   /* Light Blue */
+
+            --text-main: #f3f4f6;   /* white/light gray */
+            --text-mute: #8e9ca8;   /* gray */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(180deg, #74b4ec 0%, #b3dbfc 60%, #e1f1ff 100%) !important;
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: auto;
+        }
+
+        #sky-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        header {
+            padding: 15px 40px;
+            background: rgba(13, 20, 28, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+
+        .header-title h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .header-title p {
+            font-size: 11px;
+            color: var(--text-mute);
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #ff8833;
+            font-weight: 600;
+            background: rgba(255, 85, 0, 0.12);
+            border: 1px dashed rgba(255, 85, 0, 0.4);
+            padding: 5px 12px;
+            border-radius: 4px;
+        }
+
+        /* ── Workspace Layout ── */
+        .workspace {
+            flex: 1;
+            max-width: 1440px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ── Left Column: Step Guide & Selector ── */
+        .guide-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .module-selector {
+            background: rgba(18, 25, 32, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .selector-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-mute);
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 6px;
+        }
+
+        .select-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .select-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: var(--text-main);
+            text-align: left;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .select-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .select-btn.active {
+            background: rgba(255, 85, 0, 0.15);
+            border-color: #ff5500;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(255, 85, 0, 0.25);
+        }
+
+        .select-btn .btn-badge {
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .guide-card {
+            background: rgba(18, 25, 32, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .guide-header-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step-item {
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--text-mute);
+            padding: 8px 12px;
+            border-left: 2px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-item:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.02);
+            border-left-color: #ffffff;
+        }
+
+        .step-item.active-step {
+            color: #ffffff;
+            background: rgba(255, 85, 0, 0.1);
+            border-left-color: #ff5500;
+            font-weight: 600;
+        }
+
+        /* ── Right Column: Schematic Area ── */
+        .schematic-area {
+            position: relative;
+            background: #0b1116;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            width: 1040px;
+            height: 900px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Subgraph Boxes */
+        .subgraph-border {
+            position: absolute;
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.005);
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .subgraph-label {
+            position: absolute;
+            top: -8px;
+            left: 12px;
+            background: #0b1116;
+            padding: 0 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-mute);
+        }
+
+        /* ── Virtual PCB breakout blocks ── */
+        .virtual-pcb {
+            position: absolute;
+            background: var(--pcb-grey);
+            border: 1.5px solid #2e3943;
+            border-radius: 8px;
+            padding: 10px;
+            z-index: 20;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .virtual-pcb.focused {
+            border-color: var(--wire-sda);
+            box-shadow: 0 0 12px rgba(167, 139, 250, 0.2);
+            background: #1a232b;
+        }
+
+        .virtual-pcb.dimmed {
+            opacity: 0.15;
+        }
+
+        .pcb-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 4px;
+        }
+
+        /* Header Pin Placements */
+        .pcb-terminals {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pcb-terminal-pin {
+            width: 14px;
+            height: 14px;
+            background: #1f2937;
+            border: 1px solid #4b5563;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .pcb-terminal-pin::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #eab308; /* Golden solder */
+            border-radius: 50%;
+        }
+
+        .terminal-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 8px;
+            color: var(--text-mute);
+            position: absolute;
+            bottom: -13px;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        /* ── ESP-32 Centered DevKit ── */
+        #mcu-board {
+            position: absolute;
+            left: 380px;
+            top: 120px;
+            width: 260px;
+            height: 600px;
+            background: #13171c;
+            border: 2px solid #2e3842;
+            border-radius: 8px;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 20;
+            transition: opacity 0.3s;
+        }
+
+        #mcu-board.dimmed {
+            opacity: 0.2;
+        }
+
+        .devkit-core {
+            width: 160px;
+            height: 120px;
+            background: radial-gradient(circle at center, #262e36 0%, #0e1115 100%);
+            border: 1px solid #4b5866;
+            border-radius: 4px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .devkit-core h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .devkit-core span {
+            font-size: 8px;
+            color: var(--text-mute);
+            letter-spacing: 1px;
+            margin-top: 3px;
+        }
+
+        .mcu-pins-row {
+            display: flex;
+            justify-content: space-between;
+            flex: 1;
+            padding: 20px 0 5px 0;
+        }
+
+        .mcu-pin-rail {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 50%;
+        }
+
+        .mcu-pin-node {
+            height: 20px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .mcu-pin-node.left { padding-left: 12px; justify-content: flex-start; }
+        .mcu-pin-node.right { padding-right: 12px; justify-content: flex-end; }
+
+        .mcu-pin-contact {
+            width: 10px;
+            height: 5px;
+            background: #9ca3af;
+            border: 1px solid #6b7280;
+            border-radius: 1px;
+            position: absolute;
+            top: 7px;
+        }
+
+        .mcu-pin-node.left .mcu-pin-contact { left: -1px; }
+        .mcu-pin-node.right .mcu-pin-contact { right: -1px; }
+
+        .mcu-pin-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-mute);
+            transition: color 0.2s;
+        }
+
+        .mcu-pin-node.active-pin .mcu-pin-text { color: #fff; text-shadow: 0 0 6px #fff; }
+        .mcu-pin-node.active-pin .mcu-pin-contact { background: #fff; box-shadow: 0 0 6px #fff; }
+        .mcu-pin-node.dimmed { opacity: 0.15; }
+
+        /* ── SVG Wires Layer ── */
+        .svg-wire-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .schematic-wire {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 1.5px;
+            transition: all 0.3s ease;
+            opacity: 0.05; /* Dimmed by default */
+        }
+
+        .schematic-wire.active-wire {
+            stroke-width: 2.5px;
+            opacity: 1 !important;
+            filter: drop-shadow(0 0 3px var(--shadow-color));
+        }
+
+        .schematic-wire.dimmed-wire {
+            opacity: 0.01;
+        }
+
+        /* Animated signal pulses on active wires */
+        .schematic-wire-pulse {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 3px;
+            stroke-dasharray: 8, 40;
+            animation: schematicPulse 2.0s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 12;
+        }
+
+        .schematic-wire-pulse.active-pulse {
+            opacity: 1 !important;
+        }
+
+        @keyframes schematicPulse {
+            to { stroke-dashoffset: -96; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="sky-canvas"></canvas>
+
+    <!-- Header Panel -->
+    <header>
+        <div class="header-title">
+            <h1>AeroSense — Isolated Step-by-Step Wiring Schematic</h1>
+            <p>Select a sensor breakout to display its orthogonal connections into the ESP32 DevKit</p>
+        </div>
+        <div class="helper-text">Click a component on the left to start wiring</div>
+    </header>
+
+    <!-- Workspace -->
+    <main class="workspace">
+
+        <!-- Column Left: Module selector & instructions -->
+        <section class="guide-column">
+            
+            <div class="module-selector">
+                <div class="selector-title">Select Component</div>
+                <div class="select-list">
+                    <button class="select-btn active" onclick="selectModule('sonar')">
+                        <span>HC-SR04 Sonar</span>
+                        <span class="btn-badge tag-gpio">GPIO</span>
+                    </button>
+                    <button class="select-btn" onclick="selectModule('mq135')">
+                        <span>MQ-135 Gas Sensor</span>
+                        <span class="btn-badge tag-analog">Analog</span>
+                    </button>
+                    <button class="select-btn" onclick="selectModule('bme')">
+                        <span>BME280 Climate Module</span>
+                        <span class="btn-badge tag-i2c">I2C</span>
+                    </button>
+                    <button class="select-btn" onclick="selectModule('pms5003')">
+                        <span>PMS5003 PM Sensor</span>
+                        <span class="btn-badge tag-uart">UART</span>
+                    </button>
+                    <button class="select-btn" onclick="selectModule('lora')">
+                        <span>LoRa Ra-02 RF Module</span>
+                        <span class="btn-badge tag-spi">SPI</span>
+                    </button>
+                    <button class="select-btn" onclick="selectModule('pixhawk')">
+                        <span>MAVLink Autopilot Link</span>
+                        <span class="btn-badge tag-uart">UART</span>
+                    </button>
+                    <button class="select-btn" onclick="selectModule('bec')">
+                        <span>PDB & Dual BEC Board</span>
+                        <span class="btn-badge tag-power">Power</span>
+                    </button>
+                    <button class="select-btn" onclick="selectModule('sdcard')">
+                        <span>MicroSD Card Module</span>
+                        <span class="btn-badge tag-spi">SPI</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Instruction Step Card -->
+            <div class="guide-card">
+                <div id="guideHeader" class="guide-header-title">HC-SR04 Assembly Guide</div>
+                <div id="guideSteps" class="step-list">
+                    <!-- Dynamic step rows injected here -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Column Right: Schematic Grid Area -->
+        <section id="schematic-viewport" class="schematic-area">
+            
+            <!-- SVG Wire Layer -->
+            <svg id="svg-layer" class="svg-wire-canvas"></svg>
+
+            <!-- Subgraph UAV Border -->
+            <div class="subgraph-border" style="left: 15px; top: 15px; width: 340px; height: 540px;">
+                <div class="subgraph-label">Rotary-Wing UAV System</div>
+            </div>
+
+            <!-- Subgraph Payload Border -->
+            <div class="subgraph-border" style="left: 365px; top: 15px; width: 660px; height: 860px;">
+                <div class="subgraph-label">AeroSense ESP32 Payload</div>
+            </div>
+
+            <!-- ── Left Column Breakouts ── -->
+            <!-- HC-SR04 Sonar -->
+            <div id="board-sonar" class="virtual-pcb" style="left: 40px; top: 50px; width: 200px;">
+                <div class="pcb-name">HC-SR04 Sonar</div>
+                <div class="pcb-terminals">
+                    <div id="pin-sonar-vcc" class="pcb-terminal-pin"><span class="terminal-label">VCC</span></div>
+                    <div id="pin-sonar-trig" class="pcb-terminal-pin"><span class="terminal-label">TRIG</span></div>
+                    <div id="pin-sonar-echo" class="pcb-terminal-pin"><span class="terminal-label">ECHO</span></div>
+                    <div id="pin-sonar-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND</span></div>
+                </div>
+            </div>
+
+            <!-- MQ-135 Gas Sensor -->
+            <div id="board-mq135" class="virtual-pcb" style="left: 40px; top: 180px; width: 200px;">
+                <div class="pcb-name">MQ-135 Gas Sensor</div>
+                <div class="pcb-terminals">
+                    <div id="pin-mq135-vcc" class="pcb-terminal-pin"><span class="terminal-label">VCC</span></div>
+                    <div id="pin-mq135-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND</span></div>
+                    <div id="pin-mq135-aout" class="pcb-terminal-pin"><span class="terminal-label">AOUT</span></div>
+                </div>
+            </div>
+
+
+            <!-- F450 Frame PDB -->
+            <div id="board-f450" class="virtual-pcb" style="left: 40px; top: 440px; width: 250px;">
+                <div class="pcb-name">F450 Frame PDB</div>
+                <div class="pcb-terminals">
+                    <div id="pin-f450-bat-plus" class="pcb-terminal-pin"><span class="terminal-label">BAT+</span></div>
+                    <div id="pin-f450-bat-minus" class="pcb-terminal-pin"><span class="terminal-label">BAT-</span></div>
+                </div>
+            </div>
+
+            <!-- ── Center Column: ESP32 DevKit ── -->
+            <div id="mcu-board">
+                <div class="devkit-core">
+                    <h3>ESP32 DevKit</h3>
+                    <span>Center Board Controller</span>
+                </div>
+
+                <div class="mcu-pins-row">
+                    <!-- Left GPIOs -->
+                    <div class="mcu-pin-rail">
+                        <div id="mcu-en" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">EN (RST)</span></div>
+                        <div id="mcu-gpio36" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO36 (VP)</span></div>
+                        <div id="mcu-gpio39" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO39 (VN)</span></div>
+                        <div id="mcu-gpio34" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO34 (MQ135)</span></div>
+                        <div id="mcu-gpio35" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO35</span></div>
+                        <div id="mcu-gpio32" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO32</span></div>
+                        <div id="mcu-gpio33" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO33 (MAV RX)</span></div>
+                        <div id="mcu-gpio25" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO25 (MAV TX)</span></div>
+                        <div id="mcu-gpio26" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO26 (PMS RX)</span></div>
+                        <div id="mcu-gpio27" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO27 (PMS TX)</span></div>
+                        <div id="mcu-gpio14" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO14 (LR RST)</span></div>
+                        <div id="mcu-gpio12" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO12 (TRIG)</span></div>
+                        <div id="mcu-gpio13" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GPIO13 (ECHO)</span></div>
+                        <div id="mcu-gnd-l" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">GND</span></div>
+                        <div id="mcu-vin" class="mcu-pin-node left"><span class="mcu-pin-contact"></span><span class="mcu-pin-text">VIN (5V)</span></div>
+                    </div>
+
+                    <!-- Right GPIOs & Power -->
+                    <div class="mcu-pin-rail">
+                        <div id="mcu-3v3" class="mcu-pin-node right"><span class="mcu-pin-text">3V3</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gnd" class="mcu-pin-node right"><span class="mcu-pin-text">GND</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio15" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO15 (SD CS)</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio2" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO2</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio4" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO4 (LR DIO0)</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio16" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO16</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio17" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO17</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio5" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO5 (LR CS)</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio18" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO18 (SCK)</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio19" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO19 (MISO)</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio21" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO21 (SDA)</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio3" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO3</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio1" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO1</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio22" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO22 (SCL)</span><span class="mcu-pin-contact"></span></div>
+                        <div id="mcu-gpio23" class="mcu-pin-node right"><span class="mcu-pin-text">GPIO23 (MOSI)</span><span class="mcu-pin-contact"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Right Column Breakouts ── -->
+             <!-- PDB & Dual BEC Board -->
+            <div id="board-bec" class="virtual-pcb" style="left: 780px; top: 50px; width: 220px;">
+                <div class="pcb-name">PDB & Dual BEC Board</div>
+                <div class="pcb-terminals">
+                    <div id="pin-bec-in-vcc" class="pcb-terminal-pin"><span class="terminal-label">VIN+</span></div>
+                    <div id="pin-bec-in-gnd" class="pcb-terminal-pin"><span class="terminal-label">VIN-</span></div>
+                    <div id="pin-bec-out" class="pcb-terminal-pin"><span class="terminal-label">5V+</span></div>
+                    <div id="pin-bec-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND-</span></div>
+                </div>
+            </div>
+
+            <!-- MAVLink Autopilot Link -->
+            <div id="board-pixhawk" class="virtual-pcb" style="left: 780px; top: 180px; width: 220px;">
+                <div class="pcb-name">MAVLink FC Telemetry</div>
+                <div class="pcb-terminals">
+                    <div id="pin-pix-tx" class="pcb-terminal-pin"><span class="terminal-label">TX</span></div>
+                    <div id="pin-pix-rx" class="pcb-terminal-pin"><span class="terminal-label">RX</span></div>
+                    <div id="pin-pix-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND</span></div>
+                </div>
+            </div>
+
+            <!-- BME280 Climate Module -->
+            <div id="board-bme" class="virtual-pcb" style="left: 780px; top: 310px; width: 220px;">
+                <div class="pcb-name">BME280 Climate Module</div>
+                <div class="pcb-terminals">
+                    <div id="pin-bme-vin" class="pcb-terminal-pin"><span class="terminal-label">VIN</span></div>
+                    <div id="pin-bme-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND</span></div>
+                    <div id="pin-bme-scl" class="pcb-terminal-pin"><span class="terminal-label">SCL</span></div>
+                    <div id="pin-bme-sda" class="pcb-terminal-pin"><span class="terminal-label">SDA</span></div>
+                </div>
+            </div>
+
+            <!-- PMS5003 Laser PM Sensor -->
+            <div id="board-pms5003" class="virtual-pcb" style="left: 780px; top: 440px; width: 220px;">
+                <div class="pcb-name">PMS5003 PM Sensor</div>
+                <div class="pcb-terminals">
+                    <div id="pin-pms-vcc" class="pcb-terminal-pin"><span class="terminal-label">VCC</span></div>
+                    <div id="pin-pms-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND</span></div>
+                    <div id="pin-pms-tx" class="pcb-terminal-pin"><span class="terminal-label">TXD</span></div>
+                    <div id="pin-pms-rx" class="pcb-terminal-pin"><span class="terminal-label">RXD</span></div>
+                </div>
+            </div>
+
+            <!-- LoRa Ra-02 RF Module -->
+            <div id="board-lora" class="virtual-pcb" style="left: 700px; top: 570px; width: 300px;">
+                <div class="pcb-name">LoRa Ra-02 RF Module</div>
+                <div class="pcb-terminals">
+                    <div id="pin-lora-3v3" class="pcb-terminal-pin"><span class="terminal-label">3.3V</span></div>
+                    <div id="pin-lora-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND</span></div>
+                    <div id="pin-lora-sck" class="pcb-terminal-pin"><span class="terminal-label">SCK</span></div>
+                    <div id="pin-lora-miso" class="pcb-terminal-pin"><span class="terminal-label">MISO</span></div>
+                    <div id="pin-lora-mosi" class="pcb-terminal-pin"><span class="terminal-label">MOSI</span></div>
+                    <div id="pin-lora-nss" class="pcb-terminal-pin"><span class="terminal-label">NSS</span></div>
+                    <div id="pin-lora-rst" class="pcb-terminal-pin"><span class="terminal-label">RST</span></div>
+                    <div id="pin-lora-dio0" class="pcb-terminal-pin"><span class="terminal-label">DIO0</span></div>
+                </div>
+            </div>
+
+            <!-- MicroSD Card SPI Module -->
+            <div id="board-sdcard" class="virtual-pcb" style="left: 780px; top: 700px; width: 220px;">
+                <div class="pcb-name">MicroSD Card SPI Module</div>
+                <div class="pcb-terminals">
+                    <div id="pin-sd-vcc" class="pcb-terminal-pin"><span class="terminal-label">VCC</span></div>
+                    <div id="pin-sd-gnd" class="pcb-terminal-pin"><span class="terminal-label">GND</span></div>
+                    <div id="pin-sd-cs" class="pcb-terminal-pin"><span class="terminal-label">CS</span></div>
+                    <div id="pin-sd-mosi" class="pcb-terminal-pin"><span class="terminal-label">MOSI</span></div>
+                    <div id="pin-sd-miso" class="pcb-terminal-pin"><span class="terminal-label">MISO</span></div>
+                    <div id="pin-sd-sck" class="pcb-terminal-pin"><span class="terminal-label">SCK</span></div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Scripting connector wire drawing engine -->
+    <script>
+        // Module database of details and step-by-step connections
+        const schemaDb = {
+            sonar: {
+                title: "HC-SR04 Sonar Assembly",
+                steps: [
+                    { desc: "Wire Sonar VCC terminal to ESP32 VIN (5V) pin.", from: "pin-sonar-vcc", to: "mcu-vin", color: "var(--wire-vcc)" },
+                    { desc: "Wire Sonar TRIG terminal to ESP32 GPIO12 pin.", from: "pin-sonar-trig", to: "mcu-gpio12", color: "var(--wire-gpio)" },
+                    { desc: "Wire Sonar ECHO terminal to ESP32 GPIO13 pin (uses level shifter).", from: "pin-sonar-echo", to: "mcu-gpio13", color: "var(--wire-gpio)" },
+                    { desc: "Wire Sonar GND terminal to ESP32 GND pin.", from: "pin-sonar-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" }
+                ]
+            },
+            mq135: {
+                title: "MQ-135 Gas Sensor Assembly",
+                steps: [
+                    { desc: "Wire Gas VCC terminal to ESP32 VIN (5V) pin.", from: "pin-mq135-vcc", to: "mcu-vin", color: "var(--wire-vcc)" },
+                    { desc: "Wire Gas GND terminal to ESP32 GND pin.", from: "pin-mq135-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" },
+                    { desc: "Wire Gas AOUT terminal to ESP32 GPIO34 pin (via resistor divider).", from: "pin-mq135-aout", to: "mcu-gpio34", color: "var(--wire-analog)" }
+                ]
+            },
+            bme: {
+                title: "BME280 Climate Sensor Assembly",
+                steps: [
+                    { desc: "Wire BME VIN terminal to ESP32 3V3 power pin.", from: "pin-bme-vin", to: "mcu-3v3", color: "var(--wire-vcc)" },
+                    { desc: "Wire BME GND terminal to ESP32 GND pin.", from: "pin-bme-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" },
+                    { desc: "Wire BME SDA terminal to Shared I2C SDA (GPIO21).", from: "pin-bme-sda", to: "mcu-gpio21", color: "var(--wire-sda)" },
+                    { desc: "Wire BME SCL terminal to Shared I2C SCL (GPIO22).", from: "pin-bme-scl", to: "mcu-gpio22", color: "var(--wire-scl)" }
+                ]
+            },
+            pms5003: {
+                title: "PMS5003 Particulate Sensor Assembly",
+                steps: [
+                    { desc: "Wire PMS VCC terminal to ESP32 VIN (5V) pin.", from: "pin-pms-vcc", to: "mcu-vin", color: "var(--wire-vcc)" },
+                    { desc: "Wire PMS GND terminal to ESP32 GND pin.", from: "pin-pms-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" },
+                    { desc: "Wire PMS TXD terminal to UART2 RX (GPIO26).", from: "pin-pms-tx", to: "mcu-gpio26", color: "var(--wire-rx)" },
+                    { desc: "Wire PMS RXD terminal to UART2 TX (GPIO27).", from: "pin-pms-rx", to: "mcu-gpio27", color: "var(--wire-tx)" }
+                ]
+            },
+            lora: {
+                title: "LoRa Ra-02 RF Module Assembly",
+                steps: [
+                    { desc: "Wire LoRa 3.3V terminal to ESP32 3V3 power pin.", from: "pin-lora-3v3", to: "mcu-3v3", color: "var(--wire-vcc)" },
+                    { desc: "Wire LoRa GND terminal to ESP32 GND pin.", from: "pin-lora-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" },
+                    { desc: "Wire LoRa NSS (CS) terminal to ESP32 GPIO5 select pin.", from: "pin-lora-nss", to: "mcu-gpio5", color: "var(--wire-spi)" },
+                    { desc: "Wire LoRa SCK terminal to Shared SPI SCK (GPIO18).", from: "pin-lora-sck", to: "mcu-gpio18", color: "var(--wire-spi)" },
+                    { desc: "Wire LoRa MISO terminal to Shared SPI MISO (GPIO19).", from: "pin-lora-miso", to: "mcu-gpio19", color: "var(--wire-spi)" },
+                    { desc: "Wire LoRa MOSI terminal to Shared SPI MOSI (GPIO23).", from: "pin-lora-mosi", to: "mcu-gpio23", color: "var(--wire-spi)" },
+                    { desc: "Wire LoRa RST terminal to ESP32 GPIO14 reset pin.", from: "pin-lora-rst", to: "mcu-gpio14", color: "var(--wire-gpio)" },
+                    { desc: "Wire LoRa DIO0 terminal to ESP32 GPIO4 interrupt pin.", from: "pin-lora-dio0", to: "mcu-gpio4", color: "var(--wire-gpio)" }
+                ]
+            },
+            pixhawk: {
+                title: "MAVLink Autopilot Link Assembly",
+                steps: [
+                    { desc: "Wire Flight Controller TX terminal to ESP32 RX1 (GPIO33).", from: "pin-pix-tx", to: "mcu-gpio33", color: "var(--wire-rx)" },
+                    { desc: "Wire Flight Controller RX terminal to ESP32 TX1 (GPIO25).", from: "pin-pix-rx", to: "mcu-gpio25", color: "var(--wire-tx)" },
+                    { desc: "Wire Flight Controller GND terminal to ESP32 GND pin.", from: "pin-pix-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" }
+                ]
+            },
+            bec: {
+                title: "5V BEC & F450 Power Assembly",
+                steps: [
+                    { desc: "Solder F450 Frame PDB BAT+ terminal to BEC VIN+ input.", from: "pin-f450-bat-plus", to: "pin-bec-in-vcc", color: "var(--wire-vcc)" },
+                    { desc: "Solder F450 Frame PDB BAT- terminal to BEC VIN- input.", from: "pin-f450-bat-minus", to: "pin-bec-in-gnd", color: "var(--wire-gnd)" },
+                    { desc: "Wire BEC 5V+ output terminal to ESP32 VIN pin.", from: "pin-bec-out", to: "mcu-vin", color: "var(--wire-vcc)" },
+                    { desc: "Wire BEC GND- output terminal to ESP32 GND pin.", from: "pin-bec-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" }
+                ]
+            },
+            sdcard: {
+                title: "MicroSD Card SPI Assembly",
+                steps: [
+                    { desc: "Wire SD VCC terminal to ESP32 3V3 pin.", from: "pin-sd-vcc", to: "mcu-3v3", color: "var(--wire-vcc)" },
+                    { desc: "Wire SD GND terminal to ESP32 GND pin.", from: "pin-sd-gnd", to: "mcu-gnd", color: "var(--wire-gnd)" },
+                    { desc: "Wire SD CS terminal to ESP32 GPIO15 chip-select pin.", from: "pin-sd-cs", to: "mcu-gpio15", color: "var(--wire-spi)" },
+                    { desc: "Wire SD MOSI terminal to Shared SPI MOSI (GPIO23).", from: "pin-sd-mosi", to: "mcu-gpio23", color: "var(--wire-spi)" },
+                    { desc: "Wire SD MISO terminal to Shared SPI MISO (GPIO19).", from: "pin-sd-miso", to: "mcu-gpio19", color: "var(--wire-spi)" },
+                    { desc: "Wire SD SCK terminal to Shared SPI SCK (GPIO18).", from: "pin-sd-sck", to: "mcu-gpio18", color: "var(--wire-spi)" }
+                ]
+            }
+        };
+
+        let activeModule = 'sonar';
+        let activeStepIndex = null;
+
+        // Draw connections dynamically as clean orthogonal schematic tracks (exactly like the drawing)
+        function drawSchematicWires() {
+            const svg = document.getElementById('svg-layer');
+            const containerRect = document.getElementById('schematic-viewport').getBoundingClientRect();
+            
+            // Clear existing lines
+            svg.innerHTML = '';
+
+            // Draw paths for ALL modules
+            Object.entries(schemaDb).forEach(([modId, modData]) => {
+                const isModActive = (modId === activeModule);
+
+                modData.steps.forEach((step, stepIdx) => {
+                    const fromPin = document.getElementById(step.from);
+                    const toPin = document.getElementById(step.to);
+                    
+                    if (!fromPin || !toPin) return;
+
+                    const fromRect = fromPin.getBoundingClientRect();
+                    const toRect = toPin.getBoundingClientRect();
+
+                    // Center point calculations
+                    const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                    const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+                    const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+
+                    const isMcuTarget = toPin.closest('#mcu-board') !== null;
+                    let d;
+                    
+                    if (isMcuTarget) {
+                        const isLeftSource = (x1 < 380);
+                        const isLeftTarget = toPin.classList.contains('left');
+
+                        const parentCard = fromPin.closest('.virtual-pcb');
+                        const siblings = Array.from(parentCard.querySelectorAll('.pcb-terminal-pin'));
+                        const N = siblings.length;
+                        const pinIndex = siblings.indexOf(fromPin);
+
+                        // Dynamic spacing offset to keep wires parallel and prevent overlapping
+                        let yBend;
+                        if (isLeftSource) {
+                            yBend = y1 + 25 + (N - 1 - pinIndex) * 10;
+                        } else {
+                            yBend = y1 + 25 + pinIndex * 10;
+                        }
+
+                        // ESP32 edge contacts: Left rail is at x=380, right rail is at x=640
+                        const targetX = isLeftTarget ? 380 : 640;
+
+                        // Channel coordinate for vertical bus routing to prevent vertical overlap
+                        let xChannel;
+                        if (isLeftTarget) {
+                            xChannel = 350 - (pinIndex * 8);
+                        } else {
+                            xChannel = 670 + (pinIndex * 8);
+                        }
+
+                        d = `M ${x1} ${y1} L ${x1} ${yBend} L ${xChannel} ${yBend} L ${xChannel} ${y2} L ${targetX} ${y2}`;
+                    } else {
+                        // Direct orthogonal middle-bend connection between boards
+                        const x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                        d = `M ${x1} ${y1} L ${(x1+x2)/2} ${y1} L ${(x1+x2)/2} ${y2} L ${x2} ${y2}`;
+                    }
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', d);
+                    path.setAttribute('class', 'schematic-wire');
+                    path.setAttribute('stroke', step.color);
+                    path.style.setProperty('--shadow-color', step.color);
+                    
+                    // Highlight active wire
+                    if (isModActive) {
+                        if (activeStepIndex === null || activeStepIndex === stepIdx) {
+                            path.classList.add('active-wire');
+                        } else {
+                            path.classList.add('dimmed-wire');
+                        }
+                    } else {
+                        path.classList.add('dimmed-wire');
+                    }
+
+                    svg.appendChild(path);
+
+                    // Render animated pulse if wire is active
+                    if (isModActive && (activeStepIndex === null || activeStepIndex === stepIdx)) {
+                        let pulseColor = step.color;
+                        if (step.color.startsWith('var(')) {
+                            if (step.color.includes('vcc')) pulseColor = '#ff8787';
+                            else if (step.color.includes('gnd')) pulseColor = '#e5e7eb';
+                            else if (step.color.includes('sda')) pulseColor = '#e9d5ff';
+                            else if (step.color.includes('scl')) pulseColor = '#fcd34d';
+                            else if (step.color.includes('tx')) pulseColor = '#93c5fd';
+                            else if (step.color.includes('rx')) pulseColor = '#6ee7b7';
+                            else if (step.color.includes('spi')) pulseColor = '#fbcfe8';
+                            else if (step.color.includes('gpio')) pulseColor = '#7dd3fc';
+                        }
+
+                        const pulsePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        pulsePath.setAttribute('d', d);
+                        pulsePath.setAttribute('class', 'schematic-wire-pulse active-pulse');
+                        pulsePath.setAttribute('stroke', pulseColor);
+                        svg.appendChild(pulsePath);
+                    }
+                });
+            });
+        }
+
+        // Handle module transitions
+        function selectModule(moduleId) {
+            activeModule = moduleId;
+            activeStepIndex = null;
+            
+            // Toggle active selection button style
+            document.querySelectorAll('.select-btn').forEach(btn => {
+                const btnText = btn.querySelector('span').innerText.toLowerCase();
+                const targetText = moduleId === 'sonar' ? 'sonar' : 
+                                   moduleId === 'mq135' ? 'gas' : 
+                                   moduleId === 'bme' ? 'climate' : 
+                                   moduleId === 'pms5003' ? 'pm' : 
+                                   moduleId === 'lora' ? 'lora' : 
+                                   moduleId === 'pixhawk' ? 'autopilot' : 
+                                   moduleId === 'sdcard' ? 'microsd' : 'bec';
+                
+                if (btnText.includes(targetText)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Focus card elements on the canvas
+            document.querySelectorAll('.virtual-pcb').forEach(pcb => {
+                let shouldFocus = false;
+                if (moduleId === 'bec') {
+                    shouldFocus = (pcb.id === 'board-bec' || pcb.id === 'board-f450');
+                } else {
+                    shouldFocus = (pcb.id === `board-${moduleId}`);
+                }
+                
+                if (shouldFocus) {
+                    pcb.classList.remove('dimmed');
+                    pcb.classList.add('focused');
+                } else {
+                    pcb.classList.add('dimmed');
+                    pcb.classList.remove('focused');
+                }
+            });
+
+            // Highlight target ESP32 pins in the center column
+            const activePins = schemaDb[moduleId].steps.map(s => s.to);
+            document.querySelectorAll('.mcu-pin-node').forEach(pin => {
+                if (activePins.includes(pin.id)) {
+                    pin.classList.remove('dimmed');
+                    pin.classList.add('active-pin');
+                } else {
+                    pin.classList.add('dimmed');
+                    pin.classList.remove('active-pin');
+                }
+            });
+
+            // Render step-by-step instructions
+            renderGuide(moduleId);
+            drawSchematicWires();
+        }
+
+        // Render instruction list for the selected component
+        function renderGuide(moduleId) {
+            const data = schemaDb[moduleId];
+            const container = document.getElementById('guideSteps');
+            document.getElementById('guideHeader').innerText = data.title;
+            
+            container.innerHTML = '';
+            data.steps.forEach((step, index) => {
+                const row = document.createElement('div');
+                row.setAttribute('class', 'step-item');
+                row.innerHTML = `<strong>Step ${index + 1}:</strong> ${step.desc}`;
+                
+                // Hovering over a step isolates *only* that wire
+                row.addEventListener('mouseenter', () => {
+                    activeStepIndex = index;
+                    // Highlight ONLY the focused ESP32 pin node
+                    document.querySelectorAll('.mcu-pin-node').forEach(pin => {
+                        if (pin.id === step.to) {
+                            pin.classList.remove('dimmed');
+                            pin.classList.add('active-pin');
+                        } else {
+                            pin.classList.add('dimmed');
+                            pin.classList.remove('active-pin');
+                        }
+                    });
+                    drawSchematicWires();
+                    row.classList.add('active-step');
+                });
+
+                row.addEventListener('mouseleave', () => {
+                    activeStepIndex = null;
+                    // Restore all pins of this module
+                    const activePins = data.steps.map(s => s.to);
+                    document.querySelectorAll('.mcu-pin-node').forEach(pin => {
+                        if (activePins.includes(pin.id)) {
+                            pin.classList.remove('dimmed');
+                            pin.classList.add('active-pin');
+                        } else {
+                            pin.classList.add('dimmed');
+                            pin.classList.remove('active-pin');
+                        }
+                    });
+                    drawSchematicWires();
+                    row.classList.remove('active-step');
+                });
+
+                container.appendChild(row);
+            });
+        }
+
+        // ── Canvas Sky Background Animation ──
+        const skyCanvas = document.getElementById('sky-canvas');
+        const sCtx = skyCanvas.getContext('2d');
+
+        const resizeSkyCanvas = () => {
+            skyCanvas.width = window.innerWidth;
+            skyCanvas.height = window.innerHeight;
+        };
+        resizeSkyCanvas();
+        window.addEventListener('resize', resizeSkyCanvas);
+
+        const skyClouds = [];
+        const numSkyClouds = 8;
+        for (let i = 0; i < numSkyClouds; i++) {
+            skyClouds.push({
+                x: Math.random() * (window.innerWidth + 300) - 150,
+                y: Math.random() * (window.innerHeight * 0.45),
+                scale: 0.5 + Math.random() * 0.8,
+                speed: 0.12 + Math.random() * 0.18,
+                opacity: 0.35 + Math.random() * 0.35,
+                circles: Array.from({ length: 5 }, (_, idx) => ({
+                    dx: (idx - 2) * (20 + Math.random() * 15),
+                    dy: (Math.random() - 0.5) * 12,
+                    r: 25 + Math.random() * 35
+                }))
+            });
+        }
+
+        const skyDrones = [];
+        const numSkyDrones = 3;
+        for (let i = 0; i < numSkyDrones; i++) {
+            skyDrones.push({
+                x: Math.random() * window.innerWidth,
+                y: 80 + Math.random() * (window.innerHeight * 0.35),
+                speedX: 0.5 + Math.random() * 0.8,
+                speedY: 0,
+                wobbleSpeed: 0.02 + Math.random() * 0.03,
+                wobbleRange: 5 + Math.random() * 10,
+                wobbleOffset: Math.random() * 100,
+                scale: 0.35 + Math.random() * 0.35,
+                propAngle: 0,
+                color: ['#ff5500', '#0284c7', '#059669'][i % 3]
+            });
+        }
+
+        const drawSkyDrone = (ctx, d, time) => {
+            ctx.save();
+            const wobble = Math.sin(time * d.wobbleSpeed + d.wobbleOffset) * d.wobbleRange;
+            ctx.translate(d.x, d.y + wobble);
+            ctx.scale(d.scale, d.scale);
+            d.propAngle += 0.4;
+            
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-30, -18); ctx.lineTo(30, 18);
+            ctx.moveTo(30, -18); ctx.lineTo(-30, 18);
+            ctx.stroke();
+
+            const motorPos = [
+                { x: -30, y: -18 }, { x: 30, y: -18 },
+                { x: -30, y: 18 }, { x: 30, y: 18 }
+            ];
+            motorPos.forEach(p => {
+                ctx.fillStyle = '#475569';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                const px = Math.cos(d.propAngle) * 15;
+                const py = Math.sin(d.propAngle) * 4;
+                ctx.moveTo(p.x - px, p.y - py);
+                ctx.lineTo(p.x + px, p.y + py);
+                ctx.stroke();
+            });
+
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.roundRect(-15, -6, 30, 12, 4);
+            ctx.fill();
+
+            ctx.fillStyle = d.color;
+            ctx.beginPath();
+            ctx.arc(0, -3, 10, 0, Math.PI, true);
+            ctx.fill();
+
+            const flash = Math.floor(time / 200) % 2 === 0;
+            if (flash) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(0, 8, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+                ctx.beginPath();
+                ctx.arc(0, 8, 9, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        };
+
+        let skyFrameCount = 0;
+        const animateSky = () => {
+            skyFrameCount++;
+            sCtx.clearRect(0, 0, skyCanvas.width, skyCanvas.height);
+
+            // 1. Sun
+            const sunX = skyCanvas.width - 160;
+            const sunY = 130;
+            const sunGlow = sCtx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 180);
+            sunGlow.addColorStop(0, 'rgba(255, 253, 220, 1)');
+            sunGlow.addColorStop(0.2, 'rgba(255, 230, 100, 0.6)');
+            sunGlow.addColorStop(0.5, 'rgba(255, 200, 50, 0.2)');
+            sunGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            sCtx.fillStyle = sunGlow;
+            sCtx.beginPath();
+            sCtx.arc(sunX, sunY, 180, 0, Math.PI * 2);
+            sCtx.fill();
+
+            sCtx.fillStyle = '#fffbeb';
+            sCtx.beginPath();
+            sCtx.arc(sunX, sunY, 55, 0, Math.PI * 2);
+            sCtx.fill();
+
+            // 2. Clouds
+            skyClouds.forEach(c => {
+                c.circles.forEach(circle => {
+                    const cx = c.x + circle.dx * c.scale;
+                    const cy = c.y + circle.dy * c.scale;
+                    const r = circle.r * c.scale;
+                    const grad = sCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${c.opacity})`);
+                    grad.addColorStop(0.4, `rgba(255, 255, 255, ${c.opacity * 0.95})`);
+                    grad.addColorStop(0.8, `rgba(240, 244, 250, ${c.opacity * 0.8})`);
+                    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    sCtx.fillStyle = grad;
+                    sCtx.beginPath();
+                    sCtx.arc(cx, cy, r, 0, Math.PI * 2);
+                    sCtx.fill();
+                });
+                c.x += c.speed;
+                if (c.x > skyCanvas.width + 300) {
+                    c.x = -300;
+                    c.y = Math.random() * (skyCanvas.height * 0.45);
+                }
+            });
+
+            // 3. Drones
+            skyDrones.forEach(d => {
+                drawSkyDrone(sCtx, d, skyFrameCount * 16);
+                d.x += d.speedX;
+                if (d.x > skyCanvas.width + 150) {
+                    d.x = -150;
+                    d.y = 80 + Math.random() * (skyCanvas.height * 0.35);
+                }
+            });
+
+            requestAnimationFrame(animateSky);
+        };
+        animateSky();
+
+        // Initialize view
+        window.addEventListener('load', () => {
+            selectModule('sonar');
+        });
+        window.addEventListener('resize', drawSchematicWires);
+    </script>
+</body>
+</html>
