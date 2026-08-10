@@ -1,0 +1,13 @@
+# AeroSense — Python dependencies
+
+# Ground station
+influxdb-client>=1.36
+msgpack>=1.0
+pyserial>=3.5
+
+# Dashboard
+dash>=2.14
+plotly>=5.18
+pandas>=2.0
+scipy>=1.11
+numpy>=1.24

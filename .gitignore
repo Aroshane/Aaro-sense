@@ -2,4 +2,6 @@
 !AeroSense_Project/
 !AeroSense_Project/project/
 !AeroSense_Project/project/**
+!project/
+!project/**
 !.gitignore
