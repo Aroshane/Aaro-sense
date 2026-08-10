@@ -702,7 +702,7 @@ async def payload_loop(cfg):
     lora_cfg = cfg["lora"]
     sd_cfg = cfg["sdcard"]
     av_cfg = cfg["avoidance"]
-    ap_cfg = cfg.get("autopilot", {"enabled": True, "uart_id": 1, "tx_pin": 25, "rx_pin": 33, "baud": 57600})
+    ap_cfg = cfg.get("autopilot", {"enabled": True, "uart_id": 1, "tx_pin": 25, "rx_pin": 33, "baud": 115200})
     log_cfg = cfg["logging"]
     wifi_cfg = cfg["wifi"]
 

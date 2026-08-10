@@ -1,6 +1,6 @@
 {
   "autopilot": {
-    "baud": 57600,
+    "baud": 115200,
     "enabled": true,
     "rx_pin": 33,
     "tx_pin": 25,
@@ -12,9 +12,9 @@
   "calibration": {
     "humidity_offset": 2.0,
     "mq135_scale": 1.0,
-    "pm10_offset": 0.0,
-    "pm25_offset": 0.0,
-    "temp_offset": -1.5
+    "pm10_offset": 27.46,
+    "pm25_offset": 5.38,
+    "temp_offset": -2.41
   },
   "logging": {
     "base_dir": "/flash_logs",
@@ -33,7 +33,7 @@
   },
   "sdcard": {
     "cs_pin": 15,
-    "enabled": false,
+    "enabled": true,
     "miso_pin": 19,
     "mosi_pin": 23,
     "sck_pin": 18,

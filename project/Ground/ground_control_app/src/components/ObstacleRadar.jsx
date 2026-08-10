@@ -5,8 +5,7 @@ function ObstacleRadar({ apiBase }) {
   const [radarData, setRadarData] = useState({
     sim_mode: true,
     safety_distance_m: 2.0,
-    front_laser_m: 4.0,
-    right_ultrasonic_m: 4.0,
+    front_ultrasonic_m: 4.0,
     warning_active: false
   });
   const [safetyInput, setSafetyInput] = useState(2.0);
@@ -73,20 +72,14 @@ function ObstacleRadar({ apiBase }) {
   const center = 150;
 
   // Front blip coordinates (angle = 270 deg / Facing UP)
-  const frontRadius = (radarData.front_laser_m / maxRange) * radarRadius;
+  const frontRadius = ((radarData.front_ultrasonic_m || 4.0) / maxRange) * radarRadius;
   const frontX = center;
   const frontY = center - frontRadius;
-
-  // Right blip coordinates (angle = 0 deg / Facing RIGHT)
-  const rightRadius = (radarData.right_ultrasonic_m / maxRange) * radarRadius;
-  const rightX = center + rightRadius;
-  const rightY = center;
 
   // Safety envelope visual radius
   const safetyVisualRadius = (radarData.safety_distance_m / maxRange) * radarRadius;
 
-  const isFrontDng = radarData.front_laser_m < radarData.safety_distance_m;
-  const isRightDng = radarData.right_ultrasonic_m < radarData.safety_distance_m;
+  const isFrontDng = (radarData.front_ultrasonic_m || 4.0) < radarData.safety_distance_m;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -122,19 +115,12 @@ function ObstacleRadar({ apiBase }) {
               className={`radar-blip ${isFrontDng ? 'radar-blip-alert' : 'radar-blip-front'}`} 
             />
             
-            {/* Right Sonic blip */}
-            <circle 
-              cx={rightX} cy={rightY} r="7" 
-              className={`radar-blip ${isRightDng ? 'radar-blip-alert' : 'radar-blip-right'}`} 
-            />
-
             {/* Drone center indicator */}
-            <polygon points="150,142 145,153 150,150 155,153" fill="#fff" stroke="#8b5cf6" strokeWidth="1" />
+            <polygon points="150,142 145,153 150,150 155,153" fill="#fff" stroke="var(--color-orange)" strokeWidth="1" />
           </svg>
 
           {/* Compass labels */}
-          <div style={{ position: 'absolute', top: '8px', fontSize: '10px', fontWeight: 'bold', color: 'var(--color-cyan-light)', zIndex: 6 }}>FRONT (ToF)</div>
-          <div style={{ position: 'absolute', right: '8px', fontSize: '10px', fontWeight: 'bold', color: 'var(--color-orange-light)', zIndex: 6 }}>RIGHT (Sonic)</div>
+          <div style={{ position: 'absolute', top: '8px', fontSize: '10px', fontWeight: 'bold', color: 'var(--color-cyan-light)', zIndex: 6 }}>FRONT (Sonic)</div>
         </div>
 
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
@@ -168,24 +154,14 @@ function ObstacleRadar({ apiBase }) {
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', fontSize: '12px' }}>
               <div style={{ background: 'rgba(255, 255, 255, 0.01)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                <span style={{ color: 'var(--color-cyan-light)', fontWeight: '600', display: 'block', marginBottom: '6px' }}>Front Obstacle (VL53L1X)</span>
+                <span style={{ color: 'var(--color-cyan-light)', fontWeight: '600', display: 'block', marginBottom: '6px' }}>Front Obstacle (HC-SR04 Ultrasonic)</span>
                 <span style={{ fontSize: '24px', fontWeight: '700', color: '#fff', fontFamily: 'monospace' }}>
-                  {radarData.front_laser_m.toFixed(2)} m
+                  {radarData.front_ultrasonic_m ? radarData.front_ultrasonic_m.toFixed(2) : '4.00'} m
                 </span>
                 <div style={{ color: isFrontDng ? 'var(--color-rose)' : 'var(--color-green-light)', fontSize: '10px', marginTop: '6px', fontWeight: '500' }}>
                   {isFrontDng ? '⚠️ Too Close!' : '✓ Safe Distance'}
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(255, 255, 255, 0.01)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                <span style={{ color: 'var(--color-orange-light)', fontWeight: '600', display: 'block', marginBottom: '6px' }}>Right Obstacle (HC-SR04)</span>
-                <span style={{ fontSize: '24px', fontWeight: '700', color: '#fff', fontFamily: 'monospace' }}>
-                  {radarData.right_ultrasonic_m.toFixed(2)} m
-                </span>
-                <div style={{ color: isRightDng ? 'var(--color-rose)' : 'var(--color-green-light)', fontSize: '10px', marginTop: '6px', fontWeight: '500' }}>
-                  {isRightDng ? '⚠️ Too Close!' : '✓ Safe Distance'}
                 </div>
               </div>
             </div>

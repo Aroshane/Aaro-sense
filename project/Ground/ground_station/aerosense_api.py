@@ -10,6 +10,11 @@ Run:
 
 import os
 import sys
+
+# Automatically set working directory to project root (parent of Ground/ground_station)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+os.chdir(PROJECT_ROOT)
+
 import sqlite3
 import json
 import pickle
@@ -21,8 +26,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 # Add parent path or sibling path for imports if needed
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+sys.path.append(os.path.abspath(os.path.join(PROJECT_ROOT, "project")))
 
 app = Flask(__name__, static_folder='../ground_control_app/dist', static_url_path='/')
 CORS(app)  # Enable Cross-Origin Resource Sharing for React GCS App on Port 5173
@@ -157,6 +161,12 @@ def manage_config():
         try:
             with open(CONFIG_PATH, "r") as f:
                 config_data = json.load(f)
+            # Inject default thresholds if not present (CPCB India Standard: 60.0, Temp: 38.0)
+            if "thresholds" not in config_data:
+                config_data["thresholds"] = {
+                    "pm25_warning": 60.0,
+                    "temp_warning": 38.0
+                }
             return jsonify(config_data)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -373,8 +383,7 @@ def get_obstacle_avoidance():
 
     # Read latest database logs for flags
     warning_active = False
-    front_distance = 4.0
-    right_distance = 4.0
+    front_ultrasonic = 4.0
     
     if os.path.exists(DB_PATH):
         try:
@@ -396,19 +405,17 @@ def get_obstacle_avoidance():
     # Simulates periodic obstacles moving closer
     if sim_mode:
         # Periodic oscillation between 0.8m and 4.0m
-        front_distance = 2.4 + 1.6 * math.sin(t * 0.2)
-        right_distance = 2.6 + 1.4 * math.cos(t * 0.3)
+        front_ultrasonic = 2.4 + 1.6 * math.sin(t * 0.2)
         # Random drop occasionally to simulate proximity danger
         if int(t) % 35 < 5:
-            front_distance = 0.9 + 0.3 * math.sin(t * 2.0)
+            front_ultrasonic = 0.9 + 0.3 * math.sin(t * 2.0)
             
-        warning_active = (front_distance < safety_distance) or (right_distance < safety_distance)
+        warning_active = front_ultrasonic < safety_distance
 
     return jsonify({
         "sim_mode": sim_mode,
         "safety_distance_m": safety_distance,
-        "front_laser_m": front_distance,
-        "right_ultrasonic_m": right_distance,
+        "front_ultrasonic_m": front_ultrasonic,
         "warning_active": warning_active,
         "timestamp": t
     })
@@ -458,6 +465,42 @@ def extract_profile_from_db():
     profile["hour_of_day"] = datetime.fromtimestamp(latest_ts, tz=timezone.utc).hour
 
     return profile
+
+
+@app.route("/api/export", methods=["GET"])
+def export_data():
+    """Export SQLite telemetry entries to CSV or JSON format."""
+    format_type = request.args.get("format", default="csv").lower()
+    if not os.path.exists(DB_PATH):
+        return jsonify({"error": "No database found"}), 404
+    try:
+        conn = get_db_connection()
+        df = pd.read_sql_query("SELECT * FROM pollution_points ORDER BY timestamp ASC", conn)
+        conn.close()
+
+        if df.empty:
+            return jsonify({"error": "No telemetry data recorded yet."}), 400
+
+        if format_type == "json":
+            json_data = df.to_json(orient="records", indent=2)
+            response = app.response_class(
+                response=json_data,
+                status=200,
+                mimetype='application/json'
+            )
+            response.headers["Content-Disposition"] = "attachment; filename=aerosense_telemetry.json"
+            return response
+        else:
+            csv_data = df.to_csv(index=False)
+            response = app.response_class(
+                response=csv_data,
+                status=200,
+                mimetype='text/csv'
+            )
+            response.headers["Content-Disposition"] = "attachment; filename=aerosense_telemetry.csv"
+            return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # Serve React static assets in production build

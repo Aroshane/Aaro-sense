@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, AlertCircle, Wifi, ShieldAlert, Sliders } from 'lucide-react';
+import { Settings, Save, AlertCircle, Wifi, ShieldAlert, Sliders, Download, AlertTriangle, Database } from 'lucide-react';
 
 function ConfigManager({ config, onSaved, apiBase }) {
   const [localConfig, setLocalConfig] = useState(null);
@@ -202,18 +202,19 @@ function ConfigManager({ config, onSaved, apiBase }) {
 
       </div>
 
-      {/* Avoidance configurations */}
-      <div className="glass-card card-green">
-        <h3 style={{ fontSize: '15px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShieldAlert size={16} /> Avoidance Hardware Settings
-        </h3>
+      {/* Second row: Avoidance settings and Safety Alert thresholds */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+        
+        {/* Avoidance configurations */}
+        <div className="glass-card card-green">
+          <h3 style={{ fontSize: '15px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ShieldAlert size={16} /> Avoidance Hardware Settings
+          </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
               <div>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#fff' }}>MAVLink Avoidance Loop:</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#fff' }}>MAVLink Avoidance:</span>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Streams obstacle distance vectors to FC</p>
               </div>
               <input 
@@ -233,15 +234,132 @@ function ConfigManager({ config, onSaved, apiBase }) {
               />
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '14px', background: 'rgba(16, 185, 129, 0.03)', border: '1px solid rgba(16, 185, 129, 0.15)', borderRadius: '10px' }}>
-            <AlertCircle size={18} style={{ color: 'var(--color-green-light)', flexShrink: 0, marginTop: '2px' }} />
-            <div>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', display: 'block', marginBottom: '4px' }}>Firmware Pinout Maps</span>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                UART and I2C channel pin mapping registers are configured via source header settings. To change physical payload wiring profiles, modify properties in [WIRING_ESP32.md](file:///c:/Users/aroma/Desktop/drone/AeroSense_Project/project/docs/WIRING_ESP32.md).
-              </p>
+        {/* GCS Safety Alert Thresholds */}
+        <div className="glass-card card-orange">
+          <h3 style={{ fontSize: '15px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} /> GCS Alert Thresholds (NAAQS India)
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PM2.5 Warning (µg/m³)</label>
+                <input 
+                  type="number" step="1" className="gcs-input" 
+                  value={localConfig.thresholds ? localConfig.thresholds.pm25_warning : 60.0} 
+                  onChange={(e) => handleNestedChange('thresholds', 'pm25_warning', e.target.value, 'number')} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Temp Alert Limit (°C)</label>
+                <input 
+                  type="number" step="1" className="gcs-input" 
+                  value={localConfig.thresholds ? localConfig.thresholds.temp_warning : 38.0} 
+                  onChange={(e) => handleNestedChange('thresholds', 'temp_warning', e.target.value, 'number')} 
+                />
+              </div>
             </div>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4', marginTop: '6px' }}>
+              Triggers visual GCS flashing alarms when exceeded. India CPCB NAAQS 24-hr limit is <strong>60 µg/m³</strong>.
+            </p>
+          </div>
+        </div>
+
+        {/* SD Card & Flight Logging */}
+        <div className="glass-card card-pink">
+          <h3 style={{ fontSize: '15px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Database size={16} /> SD Card & Flight Logging
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#fff' }}>Enable SD Card Logging:</span>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Saves CSV records to SPI SD card</p>
+              </div>
+              <input 
+                type="checkbox" 
+                style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--color-pink)' }}
+                checked={localConfig.sdcard?.enabled || false} 
+                onChange={(e) => handleNestedChange('sdcard', 'enabled', e.target.checked, 'boolean')}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>CS Pin</label>
+                <input 
+                  type="number" className="gcs-input" 
+                  value={localConfig.sdcard?.cs_pin ?? 15} 
+                  onChange={(e) => handleNestedChange('sdcard', 'cs_pin', e.target.value, 'number')} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>SPI Bus ID</label>
+                <input 
+                  type="number" className="gcs-input" 
+                  value={localConfig.sdcard?.spi_id ?? 1} 
+                  onChange={(e) => handleNestedChange('sdcard', 'spi_id', e.target.value, 'number')} 
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Logging Base Dir</label>
+                <input 
+                  type="text" className="gcs-input" 
+                  value={localConfig.logging?.base_dir ?? '/sd'} 
+                  onChange={(e) => handleNestedChange('logging', 'base_dir', e.target.value)} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Interval (sec)</label>
+                <input 
+                  type="number" step="0.1" className="gcs-input" 
+                  value={localConfig.logging?.interval_s ?? 1.0} 
+                  onChange={(e) => handleNestedChange('logging', 'interval_s', e.target.value, 'number')} 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Telemetry Data Export Panel */}
+      <div className="glass-card card-blue" style={{ width: '100%' }}>
+        <h3 style={{ fontSize: '15px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Download size={16} /> Telemetry Log Exporter
+        </h3>
+        
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+          <div style={{ flex: '1', minWidth: '280px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#fff', display: 'block', marginBottom: '4px' }}>Download Flight Telemetry Database Records</span>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+              Export all logged GPS paths, particulate matter levels (PM2.5/PM10), and climatology data directly from the SQLite database.
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <a 
+              href={`${apiBase}/export?format=csv`} 
+              download 
+              className="gcs-button" 
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+            >
+              <Download size={14} /> Export CSV
+            </a>
+            <a 
+              href={`${apiBase}/export?format=json`} 
+              download 
+              className="gcs-button" 
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+            >
+              <Download size={14} /> Export JSON
+            </a>
           </div>
         </div>
       </div>

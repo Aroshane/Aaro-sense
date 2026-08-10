@@ -268,24 +268,25 @@ def build_3d_scatter(df: pd.DataFrame, metric: str = "pm25",
     ))
 
     fig.update_layout(
+        template="plotly_dark",
         scene=dict(
             xaxis_title="Longitude",
             yaxis_title="Latitude",
             zaxis_title="Altitude (m)",
             bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.06)"),
-            yaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.06)"),
-            zaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.06)"),
+            xaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255, 255, 255, 0.06)", zerolinecolor="rgba(255, 255, 255, 0.06)"),
+            yaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255, 255, 255, 0.06)", zerolinecolor="rgba(255, 255, 255, 0.06)"),
+            zaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255, 255, 255, 0.06)", zerolinecolor="rgba(255, 255, 255, 0.06)"),
         ),
         margin=dict(l=0, r=0, t=40, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#9ca3af"),
+        font=dict(color="#e5e7eb"),
         legend=dict(x=0, y=1),
         title=dict(
             text=f"3D Pollution Map — {metric.upper()} | "
                  f"{len(sub)} points | Alt {alt_min:.0f}–{alt_max:.0f} m",
-            font=dict(size=13, color="#e5e7eb"),
+            font=dict(size=13, color="#ffffff"),
         ),
     )
     return fig
@@ -303,7 +304,7 @@ def build_timeseries(df: pd.DataFrame) -> go.Figure:
     )
 
     fig.add_trace(go.Scatter(x=df["dt"], y=df["pm25"],
-                              name="PM2.5", line=dict(color="#a78bfa", width=2)),
+                              name="PM2.5", line=dict(color="#ff5500", width=2)),
                   row=1, col=1)
     fig.add_trace(go.Scatter(x=df["dt"], y=df["pm10"],
                               name="PM10",  line=dict(color="#f43f5e", width=2)),
@@ -333,14 +334,15 @@ def build_timeseries(df: pd.DataFrame) -> go.Figure:
                   row=4, col=1)
 
     fig.update_layout(
+        template="plotly_dark",
         height=520, margin=dict(l=50, r=20, t=50, b=20),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#9ca3af"),
+        font=dict(color="#e5e7eb"),
         legend=dict(orientation="h", y=1.02),
     )
-    fig.update_xaxes(gridcolor="rgba(255,255,255,0.06)", zeroline=False)
-    fig.update_yaxes(gridcolor="rgba(255,255,255,0.06)", zeroline=False)
+    fig.update_xaxes(gridcolor="rgba(255, 255, 255, 0.06)", zeroline=False)
+    fig.update_yaxes(gridcolor="rgba(255, 255, 255, 0.06)", zeroline=False)
     return fig
 
 
@@ -361,19 +363,20 @@ def build_altitude_slice(df: pd.DataFrame, alt_target: float,
             xref="paper", yref="paper",
             x=0.5, y=0.5,
             showarrow=False,
-            font=dict(size=14, color="#e5e7eb"),
+            font=dict(size=14, color="#0f172a"),
             align="center"
         )
         fig.update_layout(
+            template="plotly_dark",
             xaxis=dict(showgrid=False, showticklabels=False, zeroline=False, visible=False),
             yaxis=dict(showgrid=False, showticklabels=False, zeroline=False, visible=False),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#9ca3af"),
+            font=dict(color="#e5e7eb"),
             margin=dict(l=10, r=10, t=50, b=10),
             title=dict(
                 text=f"PM2.5 Heatmap at {alt_target:.0f}m ± {band:.0f}m",
-                font=dict(size=13, color="#9ca3af")
+                font=dict(size=13, color="#e5e7eb")
             )
         )
         return fig
@@ -410,18 +413,19 @@ def build_altitude_slice(df: pd.DataFrame, alt_target: float,
     ))
 
     fig.update_layout(
+        template="plotly_dark",
         title=dict(
             text=f"PM2.5 Heatmap at {alt_target:.0f} m altitude",
-            font=dict(color="#e5e7eb")
+            font=dict(color="#ffffff")
         ),
         xaxis_title="Longitude", yaxis_title="Latitude",
         margin=dict(l=50, r=20, t=50, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#9ca3af"),
+        font=dict(color="#e5e7eb"),
     )
-    fig.update_xaxes(gridcolor="rgba(255,255,255,0.06)", zeroline=False)
-    fig.update_yaxes(gridcolor="rgba(255,255,255,0.06)", zeroline=False)
+    fig.update_xaxes(gridcolor="rgba(255, 255, 255, 0.06)", zeroline=False)
+    fig.update_yaxes(gridcolor="rgba(255, 255, 255, 0.06)", zeroline=False)
     return fig
 
 
@@ -481,7 +485,7 @@ def get_overview_layout():
         html.Div(style={"display": "grid", "gridTemplateColumns": "1.1fr 0.9fr 1.0fr 1.0fr", "gap": "20px", "marginBottom": "24px"}, children=[
             # Diagnostics Card
             html.Div(className="glass-card card-purple", children=[
-                html.H3("System Diagnostics & Status", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "#e5e7eb"}),
+                html.H3("System Diagnostics & Status", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "var(--text-main)"}),
                 html.Div(style={"display": "flex", "flexDirection": "column", "gap": "14px"}, children=[
                     html.Div(className="health-indicator", children=[
                         html.Div(className="health-dot online"),
@@ -504,39 +508,39 @@ def get_overview_layout():
 
             # Survey Card
             html.Div(className="glass-card card-blue", children=[
-                html.H3("Active Survey Mission", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "#e5e7eb"}),
-                html.Div(style={"display": "flex", "flexDirection": "column", "gap": "10px", "fontSize": "13px", "color": "#9ca3af"}, children=[
-                    html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
-                        html.Span("Survey Area:"), html.Span("200m x 200m Grid Survey", style={"color": "#fff", "fontWeight": "500"}),
+                html.H3("Active Survey Mission", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "var(--text-main)"}),
+                html.Div(style={"display": "flex", "flexDirection": "column", "gap": "10px", "fontSize": "13px", "color": "var(--text-muted)"}, children=[
+                    html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
+                        html.Span("Survey Area:"), html.Span("200m x 200m Grid Survey", style={"color": "var(--text-main)", "fontWeight": "600"}),
                     ]),
-                    html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
-                        html.Span("Flight Speeds:"), html.Span("2.0 m/s Cruise speed", style={"color": "#fff", "fontWeight": "500"}),
+                    html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
+                        html.Span("Flight Speeds:"), html.Span("2.0 m/s Cruise speed", style={"color": "var(--text-main)", "fontWeight": "600"}),
                     ]),
-                    html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
-                        html.Span("Altitudes AGL:"), html.Span("15m, 30m, 50m Layers", style={"color": "#fff", "fontWeight": "500"}),
+                    html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
+                        html.Span("Altitudes AGL:"), html.Span("15m, 30m, 50m Layers", style={"color": "var(--text-main)", "fontWeight": "600"}),
                     ]),
                     html.Div(style={"display": "flex", "justifyContent": "space-between", "paddingBottom": "4px"}, children=[
-                        html.Span("Waypoint File:"), html.Span("aerosense_mission.waypoints", style={"color": "#fff", "fontWeight": "500"}),
+                        html.Span("Waypoint File:"), html.Span("aerosense_mission.waypoints", style={"color": "var(--text-main)", "fontWeight": "600"}),
                     ]),
                 ]),
             ]),
 
             # Live PM2.5 Forecast Card
             html.Div(className="glass-card card-green", children=[
-                html.H3("Live Ground PM2.5 Forecast (+15m)", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "#e5e7eb"}),
-                html.Div(id="prediction-display", style={"display": "flex", "flexDirection": "column", "gap": "10px", "fontSize": "13px", "color": "#9ca3af"})
+                html.H3("Live Ground PM2.5 Forecast (+15m)", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "var(--text-main)"}),
+                html.Div(id="prediction-display", style={"display": "flex", "flexDirection": "column", "gap": "10px", "fontSize": "13px", "color": "var(--text-muted)"})
             ]),
 
             # Heat-Ozone Cardiac Risk Card
             html.Div(className="glass-card card-orange", children=[
-                html.H3("Heat-Ozone Cardiac Risk (HORI)", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "#e5e7eb"}),
-                html.Div(id="ozone-risk-display", style={"display": "flex", "flexDirection": "column", "gap": "10px", "fontSize": "13px", "color": "#9ca3af"})
+                html.H3("Heat-Ozone Cardiac Risk (HORI)", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "var(--text-main)"}),
+                html.Div(id="ozone-risk-display", style={"display": "flex", "flexDirection": "column", "gap": "10px", "fontSize": "13px", "color": "var(--text-muted)"})
             ]),
         ]),
 
         # Logger Terminal Output
         html.Div(className="glass-card card-pink", children=[
-            html.H3("Live Drone Payload Console Output", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "#e5e7eb"}),
+            html.H3("Live Drone Payload Console Output", style={"margin": "0 0 16px 0", "fontSize": "15px", "color": "var(--text-main)"}),
             html.Div(id="live-log-console", className="log-container"),
         ]),
     ])
@@ -549,7 +553,7 @@ def get_3d_mapping_layout():
         html.Div(className="glass-card card-purple", style={"marginBottom": "16px"}, children=[
             html.Div(style={"display": "flex", "gap": "24px", "flexWrap": "wrap", "alignItems": "center"}, children=[
                 html.Div(children=[
-                    html.Label("Target Pollution Metric", style={"fontSize": "11px", "color": "#9ca3af", "display": "block", "marginBottom": "6px", "fontWeight": "500"}),
+                    html.Label("Target Pollution Metric", style={"fontSize": "11px", "color": "var(--text-muted)", "display": "block", "marginBottom": "6px", "fontWeight": "500"}),
                     dcc.Dropdown(
                         id="metric-select",
                         options=[
@@ -568,7 +572,7 @@ def get_3d_mapping_layout():
                 ]),
 
                 html.Div(children=[
-                    html.Label("Altitude Bounds Filter (m)", style={"fontSize": "11px", "color": "#9ca3af", "display": "block", "marginBottom": "6px", "fontWeight": "500"}),
+                    html.Label("Altitude Bounds Filter (m)", style={"fontSize": "11px", "color": "var(--text-muted)", "display": "block", "marginBottom": "6px", "fontWeight": "500"}),
                     dcc.RangeSlider(
                         id="alt-slider", min=0, max=150, step=5,
                         value=[0, 150], marks={0: "0", 50: "50", 100: "100", 150: "150"},
@@ -592,7 +596,7 @@ def get_2d_slice_layout():
         html.Div(className="glass-card card-purple", style={"marginBottom": "16px"}, children=[
             html.Div(style={"display": "flex", "gap": "24px", "flexWrap": "wrap", "alignItems": "center"}, children=[
                 html.Div(children=[
-                    html.Label("Target Elevation Slice Layer (m)", style={"fontSize": "11px", "color": "#9ca3af", "display": "block", "marginBottom": "6px", "fontWeight": "500"}),
+                    html.Label("Target Elevation Slice Layer (m)", style={"fontSize": "11px", "color": "var(--text-muted)", "display": "block", "marginBottom": "6px", "fontWeight": "500"}),
                     dcc.Slider(
                         id="slice-alt", min=0, max=150, step=5, value=10,
                         marks={0: "0m", 50: "50m", 100: "100m", 150: "150m"},
@@ -628,11 +632,13 @@ app.layout = html.Div(style={
     "position": "relative",
     "minHeight": "100vh",
     "fontFamily": "system-ui, -apple-system, sans-serif",
-    "color": "#f3f4f6",
+    "color": "var(--text-main)",
     "padding": "24px",
-    "backgroundColor": "#080a16",
+    "backgroundColor": "transparent",
     "overflowX": "hidden",
 }, children=[
+    # Canvas background for sun, clouds, and drones
+    html.Canvas(id="sky-canvas"),
     # Curtain loader overlay (curtain raising splash screen on first boot)
     html.Div(className="curtain-loader", children=[
         html.Div(className="curtain-panel"),
@@ -667,7 +673,7 @@ app.layout = html.Div(style={
                 html.H1("AeroSense",
                         style={"margin":0,"fontSize":"26px","fontWeight":"700","letterSpacing":"-0.5px"}),
                 html.P("Quadcopter 3D Pollution Mapper — Live Dashboard",
-                       style={"margin":0,"fontSize":"13px","color":"#9ca3af"}),
+                       style={"margin":0,"fontSize":"13px","color":"var(--text-muted)"}),
             ]),
             html.Div(style={"marginLeft":"auto","display":"flex","gap":"12px"}, children=[
                 html.Div(id="stat-points", className="stat-badge stat-purple"),
@@ -695,7 +701,7 @@ app.layout = html.Div(style={
         # ── Footer ────────────────────────────────────────────────────────────────
         html.Div(id="last-update",
                  style={"textAlign":"right","fontSize":"11px",
-                        "color":"#4b5563","marginTop":"20px"}),
+                        "color":"var(--text-muted)","marginTop":"20px"}),
     ])
 ])
 
@@ -841,15 +847,15 @@ def update_navbar_stats(n):
     df = load_data(DB_PATH)
     stats = compute_stats(df)
     stat_points_layout = [
-        html.Div("TOTAL SAMPLES", style={"fontSize": "10px", "color": "#9ca3af", "letterSpacing": "0.7px", "fontWeight": "600"}),
-        html.Div(f"{stats.get('points','—')}", style={"fontSize": "18px", "fontWeight": "700", "color": "#a78bfa", "marginTop": "4px"}),
+        html.Div("TOTAL SAMPLES", style={"fontSize": "10px", "color": "var(--text-muted)", "letterSpacing": "0.7px", "fontWeight": "600"}),
+        html.Div(f"{stats.get('points','—')}", style={"fontSize": "18px", "fontWeight": "700", "color": "#ff5500", "marginTop": "4px"}),
     ]
     stat_duration_layout = [
-        html.Div("FLIGHT DURATION", style={"fontSize": "10px", "color": "#9ca3af", "letterSpacing": "0.7px", "fontWeight": "600"}),
+        html.Div("FLIGHT DURATION", style={"fontSize": "10px", "color": "var(--text-muted)", "letterSpacing": "0.7px", "fontWeight": "600"}),
         html.Div(f"{stats.get('duration','—')}", style={"fontSize": "18px", "fontWeight": "700", "color": "#60a5fa", "marginTop": "4px"}),
     ]
     stat_pm25_layout = [
-        html.Div("AVG PM2.5 LEVEL", style={"fontSize": "10px", "color": "#9ca3af", "letterSpacing": "0.7px", "fontWeight": "600"}),
+        html.Div("AVG PM2.5 LEVEL", style={"fontSize": "10px", "color": "var(--text-muted)", "letterSpacing": "0.7px", "fontWeight": "600"}),
         html.Div(f"{stats.get('pm25_mean','—')}", style={"fontSize": "18px", "fontWeight": "700", "color": "#34d399", "marginTop": "4px"}),
     ]
     now = datetime.now(tz=timezone.utc).strftime("Updated %H:%M:%S UTC")
@@ -914,7 +920,7 @@ def update_live_prediction(n):
     profile = extract_current_profile(DB_PATH)
     if not profile:
         return html.Div("⏳ Waiting for complete flight profile (15m, 30m, 50m readings)...", 
-                        style={"color": "#9ca3af", "fontSize": "13px"})
+                        style={"color": "var(--text-muted)", "fontSize": "13px"})
 
     # 3. Perform prediction
     pred_val = predict_single(model_data["model"], model_data["scaler"], profile)
@@ -930,24 +936,24 @@ def update_live_prediction(n):
         trend_color = "#10b981" # Emerald Green
     else:
         trend_text = "Stable Mix"
-        trend_color = "#9ca3af"
+        trend_color = "var(--text-muted)"
 
     return html.Div(children=[
-        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
+        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
             html.Span("Ground PM2.5 NOW (15m):"),
-            html.Span(f"{ground_now:.1f} ug/m3", style={"color": "#fff", "fontWeight": "600"}),
+            html.Span(f"{ground_now:.1f} ug/m3", style={"color": "var(--text-main)", "fontWeight": "600"}),
         ]),
-        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
+        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
             html.Span("Predicted PM2.5 (+15m):"),
             html.Span(f"{pred_val:.1f} ug/m3", style={"color": "#34d399", "fontWeight": "700"}),
         ]),
-        html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
+        html.Div(style={"display": "flex", "justifyContent": "space-between", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
             html.Span("Trend Indicator:"),
             html.Span(trend_text, style={"color": trend_color, "fontWeight": "600"}),
         ]),
         html.Div(style={"display": "flex", "justifyContent": "space-between", "paddingBottom": "2px"}, children=[
             html.Span("Atmospheric Gradient:"),
-            html.Span(f"{profile['temp_gradient_15_50']:+.1f}°C", style={"color": "#fff", "fontWeight": "500"}),
+            html.Span(f"{profile['temp_gradient_15_50']:+.1f}°C", style={"color": "var(--text-main)", "fontWeight": "500"}),
         ]),
     ])
 
@@ -958,7 +964,7 @@ def update_live_prediction(n):
 def update_ozone_risk_display(n):
     df = load_data(DB_PATH)
     if df.empty:
-        return html.Div("⏳ Waiting for data...", style={"color": "#9ca3af"})
+        return html.Div("⏳ Waiting for data...", style={"color": "var(--text-muted)"})
     
     # Get the latest reading
     latest = df.iloc[-1]
@@ -979,19 +985,19 @@ def update_ozone_risk_display(n):
         alert_msg = "Critical: Extreme cardiac/respiratory threat!"
         
     return html.Div(children=[
-        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
+        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
             html.Span("Latest Temperature:"),
-            html.Span(f"{temp:.1f} °C", style={"color": "#fff", "fontWeight": "600"}),
+            html.Span(f"{temp:.1f} °C", style={"color": "var(--text-main)", "fontWeight": "600"}),
         ]),
-        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
+        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
             html.Span("Precursor Gas (MQ-135):"),
-            html.Span(f"{mq135:.2f} V", style={"color": "#fff", "fontWeight": "600"}),
+            html.Span(f"{mq135:.2f} V", style={"color": "var(--text-main)", "fontWeight": "600"}),
         ]),
-        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
+        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
             html.Span("HORI Score:"),
             html.Span(f"{score:.1f} / 100", style={"color": color, "fontWeight": "700"}),
         ]),
-        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(255,255,255,0.03)", "paddingBottom": "6px"}, children=[
+        html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "borderBottom": "1px solid rgba(15, 23, 42, 0.08)", "paddingBottom": "6px"}, children=[
             html.Span("Risk Category:"),
             html.Span(category, style={"color": color, "fontWeight": "700"}),
         ]),

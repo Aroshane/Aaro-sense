@@ -131,6 +131,12 @@ Refer to the complete mapping guide in [WIRING_ESP32.md](file:///c:/Users/aroma/
 ## Flight Mission and Calibration
 Configure ArduPilot waypoint grids inside `mission/aerosense_mission.py` and modify offset parameters inside `firmware/config.json`.
 
+To automatically calculate sensor offsets using reference station CSV data from the CPCB (Continuous Ambient Air Quality Monitoring) portal, run:
+```bash
+python project/ai_prediction/calibrate_sensors.py --cpcb path/to/cpcb_reference.csv --write
+```
+This script will align the time series, compute optimal PM2.5, PM10, and Temperature offsets, and save them directly to `project/firmware/config.json`.
+
 ---
 
 ## License
