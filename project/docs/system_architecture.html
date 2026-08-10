@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroSense — System Architecture Flowchart</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-canvas: #091016;
+            --color-uav: #3b82f6; /* Blue */
+            --color-payload: #a78bfa; /* Purple */
+            --color-gs: #10b981; /* Emerald Green */
+            --color-accent: #f59e0b; /* Amber */
+            --node-bg: #161e25;
+            --node-border: #2e3943;
+            --text-main: #f3f4f6;
+            --text-mute: #8e9ca8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: auto;
+        }
+
+        /* ── Technical Header ── */
+        header {
+            padding: 20px 40px;
+            background: rgba(13, 22, 33, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+
+        .header-title h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #fff;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--text-mute);
+        }
+
+        .control-panel {
+            font-size: 11px;
+            color: var(--text-mute);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--color-gs);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px var(--color-gs);
+        }
+
+        /* ── Canvas Viewport Wrapper ── */
+        .viewport-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            overflow: auto;
+            position: relative;
+        }
+
+        /* ── Absolute Diagram Canvas ── */
+        #diagram-canvas {
+            width: 1240px;
+            height: 980px;
+            position: relative;
+            background-color: var(--bg-canvas);
+            background-image: 
+                radial-gradient(circle at center, rgba(167, 139, 250, 0.02), transparent),
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ── Outer System Modules (Subgraphs) ── */
+        .subgraph-box {
+            position: absolute;
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.01);
+            transition: border-color 0.3s;
+        }
+
+        .subgraph-box:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .subgraph-header {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: var(--bg-canvas);
+            padding: 0 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .subgraph-box.uav { border-color: rgba(59, 130, 246, 0.25); }
+        .subgraph-box.payload { border-color: rgba(167, 139, 250, 0.25); }
+        .subgraph-box.gs { border-color: rgba(16, 185, 129, 0.25); }
+
+        .subgraph-box.uav .subgraph-header { color: var(--color-uav); }
+        .subgraph-box.payload .subgraph-header { color: var(--color-payload); }
+        .subgraph-box.gs .subgraph-header { color: var(--color-gs); }
+
+        /* ── Component Nodes ── */
+        .node {
+            position: absolute;
+            background: var(--node-bg);
+            border: 1px solid var(--node-border);
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8px 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 20;
+        }
+
+        .node:hover {
+            transform: translateY(-2px);
+            background: #1d2730;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            border-color: #60a5fa;
+        }
+
+        /* Group highlighting */
+        .node.highlight-uav { border-color: var(--color-uav); box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
+        .node.highlight-payload { border-color: var(--color-payload); box-shadow: 0 0 10px rgba(167, 139, 250, 0.2); }
+        .node.highlight-gs { border-color: var(--color-gs); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+
+        /* ── SVG Connector Overlay ── */
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .conn-path {
+            fill: none;
+            stroke: #2e3943;
+            stroke-width: 1.5px;
+            transition: all 0.3s;
+        }
+
+        .conn-path.active {
+            stroke-width: 2.5px;
+            opacity: 1 !important;
+        }
+
+        .conn-pulse {
+            fill: none;
+            stroke-width: 3px;
+            stroke-linecap: round;
+            stroke-dasharray: 6, 30;
+            animation: pulseDash 2.5s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .conn-pulse.active {
+            opacity: 1;
+        }
+
+        .conn-path.dimmed {
+            opacity: 0.08;
+        }
+
+        @keyframes pulseDash {
+            to { stroke-dashoffset: -120; }
+        }
+
+        /* ── Label Shields (Masks for Text) ── */
+        .label-bg {
+            fill: var(--bg-canvas);
+        }
+
+        .label-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 9px;
+            font-weight: 500;
+            fill: var(--text-mute);
+            text-anchor: middle;
+            transition: fill 0.2s;
+        }
+
+        .label-text.active {
+            fill: #fff;
+            font-weight: 600;
+        }
+
+        /* ── Interactive Info Sidebar ── */
+        .info-panel {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            width: 420px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 50;
+            backdrop-filter: blur(16px);
+            display: none;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .info-close {
+            background: none;
+            border: none;
+            color: var(--text-mute);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .info-close:hover { color: #fff; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .info-item h4 {
+            font-size: 10px;
+            color: var(--text-mute);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .info-item p {
+            color: #f3f4f6;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Panel -->
+    <header>
+        <div class="header-title">
+            <h1>AeroSense — Volumetric System Architecture</h1>
+            <p>Interactive Signal & Component Layout Schematic</p>
+        </div>
+        <div class="control-panel">
+            <span class="status-dot"></span>
+            <span>Interactive Node Focus: ENABLED</span>
+        </div>
+    </header>
+
+    <!-- Canvas Wrapper -->
+    <div class="viewport-wrapper">
+        <div id="diagram-canvas">
+            
+            <!-- SVG Connector Layer -->
+            <svg id="connector-svg" class="svg-overlay">
+                <defs>
+                    <!-- Marker for Arrowheads -->
+                    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" 
+                            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#4b5563" id="arrow-path"/>
+                    </marker>
+                    <marker id="arrow-active-uav" viewBox="0 0 10 10" refX="6" refY="5" 
+                            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--color-uav)"/>
+                    </marker>
+                    <marker id="arrow-active-payload" viewBox="0 0 10 10" refX="6" refY="5" 
+                            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--color-payload)"/>
+                    </marker>
+                    <marker id="arrow-active-gs" viewBox="0 0 10 10" refX="6" refY="5" 
+                            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--color-gs)"/>
+                    </marker>
+                    <marker id="arrow-active-accent" viewBox="0 0 10 10" refX="6" refY="5" 
+                            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--color-accent)"/>
+                    </marker>
+                </defs>
+            </svg>
+
+            <!-- ── Subgraph Box 1: UAV System ── -->
+            <div class="subgraph-box uav" style="left: 20px; top: 40px; width: 340px; height: 260px;">
+                <div class="subgraph-header">Rotary-Wing UAV System</div>
+                
+                <div id="node-fc" class="node" style="left: 60px; top: 50px; width: 220px; height: 50px;">
+                    Pixhawk/SpeedyBee Flight Controller
+                </div>
+
+                <div id="node-motors" class="node" style="left: 30px; top: 170px; width: 130px; height: 50px;">
+                    UAV Motors & Escs
+                </div>
+
+                <div id="node-mcu" class="node" style="left: 180px; top: 170px; width: 140px; height: 50px;">
+                    ESP32-S3 MCU<br/>Dual-Core 240
+                </div>
+            </div>
+
+            <!-- ── Subgraph Box 2: ESP32-S3 Payload ── -->
+            <div class="subgraph-box payload" style="left: 380px; top: 40px; width: 840px; height: 370px;">
+                <div class="subgraph-header">AeroSense ESP32-S3 Payload</div>
+
+                <!-- Top Row: Proximity & Environmental inputs -->
+                <div id="node-sonar" class="node" style="left: 20px; top: 50px; width: 140px; height: 45px;">
+                    HC-SR04 Ultrasonic
+                </div>
+
+                <div id="node-tof" class="node" style="left: 180px; top: 50px; width: 140px; height: 45px;">
+                    VL53L1X Laser ToF
+                </div>
+
+                <div id="node-mq135" class="node" style="left: 340px; top: 50px; width: 150px; height: 45px;">
+                    MQ-135 Precursor Gas
+                </div>
+
+                <div id="node-bme280" class="node" style="left: 510px; top: 50px; width: 155px; height: 45px;">
+                    BME280 Temp/Hum/Press
+                </div>
+
+                <div id="node-pms5003" class="node" style="left: 685px; top: 50px; width: 140px; height: 45px;">
+                    PMS5003 Laser PM Sensor
+                </div>
+
+                <!-- Bottom Row: Storage, WiFi, LoRa -->
+                <div id="node-sd" class="node" style="left: 20px; top: 280px; width: 150px; height: 45px;">
+                    SPI MicroSD Logger
+                </div>
+
+                <div id="node-wifi" class="node" style="left: 340px; top: 280px; width: 150px; height: 45px;">
+                    ESP32 Internal WIFI
+                </div>
+
+                <div id="node-lora" class="node" style="left: 510px; top: 280px; width: 155px; height: 45px;">
+                    SX1276 LoRa Ra-02
+                </div>
+            </div>
+
+            <!-- ── Subgraph Box 3: Ground Station ── -->
+            <div class="subgraph-box gs" style="left: 450px; top: 460px; width: 440px; height: 490px;">
+                <div class="subgraph-header">AeroSense Ground Station</div>
+
+                <div id="node-router" class="node" style="left: 30px; top: 40px; width: 170px; height: 45px;">
+                    WiFi Hotspot Router
+                </div>
+
+                <div id="node-lora-rec" class="node" style="left: 240px; top: 40px; width: 170px; height: 45px;">
+                    LoRa Receiver Node
+                </div>
+
+                <div id="node-port5005" class="node" style="left: 30px; top: 120px; width: 170px; height: 40px;">
+                    WiFi UDP Port 5005
+                </div>
+
+                <div id="node-msgpack" class="node" style="left: 240px; top: 120px; width: 170px; height: 40px;">
+                    Serial MsgPack Data
+                </div>
+
+                <div id="node-ingest" class="node" style="left: 80px; top: 195px; width: 280px; height: 45px;">
+                    UDP/Serial Ground Ingest Script
+                </div>
+
+                <div id="node-sqlite" class="node" style="left: 40px; top: 275px; width: 150px; height: 45px;">
+                    SQLite Database
+                </div>
+
+                <div id="node-influx" class="node" style="left: 250px; top: 275px; width: 150px; height: 45px;">
+                    InfluxDB Database
+                </div>
+
+                <div id="node-dash" class="node" style="left: 80px; top: 355px; width: 280px; height: 45px;">
+                    Plotly Dash Web Server
+                </div>
+
+                <div id="node-browser" class="node" style="left: 80px; top: 425px; width: 280px; height: 45px;">
+                    Web Browser UI
+                </div>
+            </div>
+
+            <!-- Details Overlay Modal -->
+            <div id="infoPanel" class="info-panel">
+                <div class="info-header">
+                    <span id="infoTitle" class="info-title">Component Specifications</span>
+                    <button class="info-close" onclick="closeInfo()">✕</button>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <h4>Functional Purpose</h4>
+                        <p id="infoPurpose">N/A</p>
+                    </div>
+                    <div class="info-item">
+                        <h4>Wiring / Protocol</h4>
+                        <p id="infoInterface">N/A</p>
+                    </div>
+                    <div class="info-item">
+                        <h4>ESP Pin Configurations</h4>
+                        <p id="infoPins">N/A</p>
+                    </div>
+                    <div class="info-item">
+                        <h4>Voltage Tolerances</h4>
+                        <p id="infoVoltage">N/A</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Javascript connector layout engine -->
+    <script>
+        // Database of technical specifications
+        const technicalDb = {
+            'node-fc': {
+                title: "Pixhawk / SpeedyBee Flight Controller",
+                purpose: "Navigational coordinator. Runs ArduPilot, reads GPS/IMU parameters, and streams telemetry down to payload UART lines.",
+                interface: "MAVLink v2 Protocol (57600 baud)",
+                pins: "Telemetry UART Port (TX/RX connected to ESP32 RX1/TX1)",
+                voltage: "5.0V Input from BEC module"
+            },
+            'node-motors': {
+                title: "UAV Propulsion Systems (Motors & ESCs)",
+                purpose: "Controls structural propulsion. Connected directly to Flight Controller PWM signal outputs.",
+                interface: "PWM / DShot protocols",
+                pins: "FC Main Out PWM Channels 1-4",
+                voltage: "3S-6S LiPo Direct Battery feed"
+            },
+            'node-mcu': {
+                title: "ESP32-S3 Dual-Core Microcontroller",
+                purpose: "Payload central core. Manages asynchronous 10Hz obstacle sweeps and 1Hz logging/telemetry pipelines concurrently.",
+                interface: "Shared SPI, I2C, UART, ADC1",
+                pins: "Refer to Complete Wiring Matrix references",
+                voltage: "5.0V VIN / 3.3V VCC"
+            },
+            'node-sonar': {
+                title: "HC-SR04 Sonar Rangefinder",
+                purpose: "Measures lateral proximity boundaries (90 deg right) at 10Hz to feed the avoidance engine.",
+                interface: "GPIO Trigger & Echo (Pulse Width)",
+                pins: "TRIG: GPIO12, ECHO: GPIO13 (with 5V-to-3.3V level-shifter)",
+                voltage: "5.0V DC VCC"
+            },
+            'node-tof': {
+                title: "VL53L1X Time-of-Flight Laser Sensor",
+                purpose: "Measures frontal obstacle limits up to 4.0 meters at 10Hz to generate collision warning vectors.",
+                interface: "I2C (Address 0x29, 100 kHz)",
+                pins: "SDA: GPIO21, SCL: GPIO22",
+                voltage: "3.3V VCC"
+            },
+            'node-mq135': {
+                title: "MQ-135 Gas Sensor",
+                purpose: "Tracks volatile organic compounds and NOx levels to estimate ozone reaction probabilities.",
+                interface: "Analog Output (ADC1 Channel 6)",
+                pins: "AOUT connected to GPIO34 (using 1.8k/3.3k resistor dividers)",
+                voltage: "5.0V DC (heater filament load)"
+            },
+            'node-bme280': {
+                title: "BME280 Climate Module",
+                purpose: "Tracks relative environmental temperature, humidity, and barometric pressure values.",
+                interface: "I2C (Address 0x76, 100 kHz)",
+                pins: "SDA: GPIO21, SCL: GPIO22 (Shared I2C bus)",
+                voltage: "3.3V VCC"
+            },
+            'node-pms5003': {
+                title: "PMS5003 Laser PM Sensor",
+                purpose: "Acquires PM2.5 and PM10 particulate levels. Mounted 20cm away from rotors to limit wash contamination.",
+                interface: "UART2 Interface (9600 baud)",
+                pins: "TXD: GPIO26, RXD: GPIO27",
+                voltage: "5.0V DC (laser diode & fan motor)"
+            },
+            'node-sd': {
+                title: "SPI MicroSD Card Module",
+                purpose: "Serves as local offline telemetry backup. Appends points chronologically to `/flight.csv`.",
+                interface: "SPI Bus Interface",
+                pins: "SCK: 18, MISO: 19, MOSI: 23, CS: GPIO15",
+                voltage: "3.3V VCC"
+            },
+            'node-wifi': {
+                title: "Internal WiFi Station (UDP Mode)",
+                purpose: "Transmits real-time binary MessagePack frames to ground hotspot nodes in localized/simulation fields.",
+                interface: "WiFi 802.11 b/g/n (Port 5005)",
+                pins: "On-chip 2.4 GHz Antenna",
+                voltage: "On-chip Logic"
+            },
+            'node-lora': {
+                title: "SX1276 Ra-02 LoRa Module",
+                purpose: "Transmits compressed MessagePack telemetry frames over 433 MHz RF lines to the ground station receiver.",
+                interface: "SPI Bus Interface",
+                pins: "SCK: 18, MISO: 19, MOSI: 23, CS: GPIO5, RST: GPIO14, DIO0: GPIO4",
+                voltage: "3.3V VCC"
+            },
+            'node-router': {
+                title: "WiFi Hotspot Router",
+                purpose: "Receives wireless UDP telemetry frames from the drone payload inside close-range ground boundaries.",
+                interface: "WiFi 2.4 GHz Network",
+                pins: "Standalone ground networking component",
+                voltage: "12.0V DC adapter"
+            },
+            'node-lora-rec': {
+                title: "LoRa SX1276 Ground Receiver Node",
+                purpose: "Poles 433 MHz RF lines, verifies MessagePack frame packet signatures, and outputs bytes to ground computers.",
+                interface: "433 MHz LoRa to USB Serial Link",
+                pins: "Connected directly via Ground Station USB port",
+                voltage: "5.0V USB Bus power"
+            },
+            'node-port5005': {
+                title: "WiFi UDP Port 5005 Ingest",
+                purpose: "Receives UDP data streams on port 5005 from the ground router.",
+                interface: "UDP Socket Data stream",
+                pins: "Logical network port on Ground Station",
+                voltage: "Software Port"
+            },
+            'node-msgpack': {
+                title: "Serial MsgPack Data Ingest",
+                purpose: "Extracts incoming MessagePack frames from the USB receiver COM channel.",
+                interface: "USB Serial byte stream",
+                pins: "COM/UART physical interface on Ingest workstation",
+                voltage: "Software Link"
+            },
+            'node-ingest': {
+                title: "UDP/Serial Ground Ingest Script",
+                purpose: "Python script that unpacks binary MessagePack fields, extracts data points, and writes to target databases.",
+                interface: "Python Ingest Engine",
+                pins: "Background software processing engine",
+                voltage: "Host computer CPU"
+            },
+            'node-sqlite': {
+                title: "SQLite Database",
+                purpose: "Stores telemetry points locally inside `data/aerosense.db` to serve the Dash rendering pipeline.",
+                interface: "File-based SQLite DB",
+                pins: "Local storage directory path",
+                voltage: "Workstation SSD"
+            },
+            'node-influx': {
+                title: "InfluxDB Database",
+                purpose: "Real-time time-series database repository for remote analysis and telemetry storage.",
+                interface: "InfluxDB API Interface",
+                pins: "Database bucket channel config",
+                voltage: "Workstation SSD / Cloud hosting"
+            },
+            'node-dash': {
+                title: "Plotly Dash Web Server",
+                purpose: "Runs a local web server (Port 8050) compiling spatial interpolations and 3D flight visualization grids.",
+                interface: "Plotly Dash framework",
+                pins: "Local server port 8050",
+                voltage: "Host computer CPU"
+            },
+            'node-browser': {
+                title: "Web Browser UI Dashboard",
+                purpose: "User-facing dashboard displaying 3D flight maps, 2D slice heatmaps, diagnostics tables, and ML forecasting predictions.",
+                interface: "HTTP / CSS / HTML render",
+                pins: "Local browser window",
+                voltage: "Host monitor"
+            }
+        };
+
+        // Complete Connection Matrix matching the screenshot flow
+        const connections = [
+            // UAV Box
+            { from: 'node-fc', to: 'node-motors', label: '', fromSide: 'bottom', toSide: 'top', color: 'var(--color-uav)' },
+            { from: 'node-fc', to: 'node-mcu', label: 'MAVLink UART (57600 baud)', fromSide: 'bottom', toSide: 'top', color: 'var(--color-uav)', offset: -20 },
+            { from: 'node-mcu', to: 'node-fc', label: 'MAVLink UART (57600 baud)', fromSide: 'top', toSide: 'bottom', color: 'var(--color-uav)', offset: 20 },
+            
+            // Sensor to MCU Connections
+            { from: 'node-sonar', to: 'node-mcu', label: 'GPIO Pulse Width 10Hz Range', fromSide: 'bottom', toSide: 'left', color: 'var(--color-payload)' },
+            { from: 'node-tof', to: 'node-mcu', label: 'I2C (100kHz) 10Hz Range (Front)', fromSide: 'bottom', toSide: 'left', color: 'var(--color-payload)' },
+            { from: 'node-mq135', to: 'node-mcu', label: 'Analog Voltage 1Hz Gas', fromSide: 'bottom', toSide: 'left', color: 'var(--color-payload)' },
+            { from: 'node-bme280', to: 'node-mcu', label: 'I2C (100kHz) 1Hz Climate', fromSide: 'bottom', toSide: 'left', color: 'var(--color-payload)' },
+            { from: 'node-pms5003', to: 'node-mcu', label: 'UART (9600 baud) 1Hz PM Data', fromSide: 'bottom', toSide: 'left', color: 'var(--color-payload)' },
+
+            // Storage and Telemetry Connections
+            { from: 'node-mcu', to: 'node-sd', label: 'SPI Bus', fromSide: 'bottom', toSide: 'top', color: 'var(--color-payload)' },
+            { from: 'node-mcu', to: 'node-lora', label: 'SPI Bus', fromSide: 'bottom', toSide: 'top', color: 'var(--color-payload)' },
+
+            // RF and WiFi Outputs to Ground Station
+            { from: 'node-wifi', to: 'node-router', label: 'UDP Packets', fromSide: 'bottom', toSide: 'top', color: 'var(--color-accent)' },
+            { from: 'node-lora', to: 'node-lora-rec', label: '433 MHz RF Link', fromSide: 'bottom', toSide: 'top', color: 'var(--color-accent)' },
+
+            // Ground Station Internal Data Flow
+            { from: 'node-router', to: 'node-port5005', label: '', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' },
+            { from: 'node-lora-rec', to: 'node-msgpack', label: '', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' },
+            { from: 'node-port5005', to: 'node-ingest', label: 'WiFi UDP Port 5005', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' },
+            { from: 'node-msgpack', to: 'node-ingest', label: 'Serial MsgPack Data', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' },
+            { from: 'node-ingest', to: 'node-sqlite', label: '', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' },
+            { from: 'node-ingest', to: 'node-influx', label: '', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' },
+            { from: 'node-sqlite', to: 'node-dash', label: '', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' },
+            { from: 'node-dash', to: 'node-browser', label: '', fromSide: 'bottom', toSide: 'top', color: 'var(--color-gs)' }
+        ];
+
+        // Draw connections dynamically
+        function drawAllConnectors() {
+            const svg = document.getElementById('connector-svg');
+            const containerRect = document.getElementById('diagram-canvas').getBoundingClientRect();
+            
+            // Clear existing paths and labels
+            const paths = svg.querySelectorAll('.conn-path, .conn-pulse, .label-group');
+            paths.forEach(p => p.remove());
+
+            connections.forEach((conn, index) => {
+                const fromNode = document.getElementById(conn.from);
+                const toNode = document.getElementById(conn.to);
+                
+                if (!fromNode || !toNode) return;
+
+                const fromRect = fromNode.getBoundingClientRect();
+                const toRect = toNode.getBoundingClientRect();
+
+                // Get coordinates relative to canvas container
+                let x1, y1, x2, y2;
+
+                if (conn.fromSide === 'bottom') {
+                    x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                    y1 = fromRect.bottom - containerRect.top;
+                } else if (conn.fromSide === 'top') {
+                    x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                    y1 = fromRect.top - containerRect.top;
+                } else { // right
+                    x1 = fromRect.right - containerRect.left;
+                    y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+                }
+
+                if (conn.toSide === 'top') {
+                    x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                    y2 = toRect.top - containerRect.top;
+                } else if (conn.toSide === 'bottom') {
+                    x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                    y2 = toRect.bottom - containerRect.top;
+                } else { // left
+                    x2 = toRect.left - containerRect.left;
+                    y2 = toRect.top + toRect.height / 2 - containerRect.top;
+                }
+
+                // Apply offset adjustments for parallel paths (like MAVLink)
+                if (conn.offset) {
+                    if (conn.fromSide === 'bottom' || conn.fromSide === 'top') {
+                        x1 += conn.offset;
+                        x2 += conn.offset;
+                    } else {
+                        y1 += conn.offset;
+                        y2 += conn.offset;
+                    }
+                }
+
+                // Draw path bezier control rules
+                let d;
+                let midX = (x1 + x2) / 2;
+                let midY = (y1 + y2) / 2;
+
+                if (conn.fromSide === 'bottom' && conn.toSide === 'top') {
+                    const dy = Math.abs(y2 - y1) / 2;
+                    d = `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
+                } else if (conn.fromSide === 'bottom' && conn.toSide === 'left') {
+                    // Curved swoop down and left
+                    d = `M ${x1} ${y1} C ${x1} ${y1 + 50}, ${x2 - 120} ${y2}, ${x2} ${y2}`;
+                    
+                    // Bezier midpoint calculation (t=0.5)
+                    const p1x = x1, p1y = y1 + 50;
+                    const p2x = x2 - 120, p2y = y2;
+                    midX = 0.125 * x1 + 0.375 * p1x + 0.375 * p2x + 0.125 * x2;
+                    midY = 0.125 * y1 + 0.375 * p1y + 0.375 * p2y + 0.125 * y2;
+                } else if (conn.fromSide === 'top' && conn.toSide === 'bottom') {
+                    const dy = Math.abs(y1 - y2) / 2;
+                    d = `M ${x1} ${y1} C ${x1} ${y1 - dy}, ${x2} ${y2 + dy}, ${x2} ${y2}`;
+                } else {
+                    d = `M ${x1} ${y1} L ${x2} ${y2}`;
+                }
+
+                // Color mappings based on hover states
+                const markerId = conn.color === 'var(--color-uav)' ? 'arrow-active-uav' :
+                                 conn.color === 'var(--color-payload)' ? 'arrow-active-payload' :
+                                 conn.color === 'var(--color-gs)' ? 'arrow-active-gs' : 'arrow-active-accent';
+
+                // Create main connector path
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('id', `conn-path-${index}`);
+                path.setAttribute('d', d);
+                path.setAttribute('class', 'conn-path');
+                path.setAttribute('stroke', conn.color);
+                path.setAttribute('marker-end', `url(#${markerId})`);
+                svg.appendChild(path);
+
+                // Create animated pulse path
+                const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pulse.setAttribute('d', d);
+                pulse.setAttribute('class', 'conn-pulse');
+                pulse.setAttribute('stroke', conn.color === 'var(--color-payload)' ? '#c084fc' : conn.color === 'var(--color-gs)' ? '#34d399' : '#60a5fa');
+                svg.appendChild(pulse);
+
+                // Add label if specified
+                if (conn.label) {
+                    const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    labelGroup.setAttribute('class', 'label-group');
+
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', midX);
+                    text.setAttribute('y', midY + 3);
+                    text.setAttribute('class', 'label-text');
+                    text.textContent = conn.label;
+
+                    // Background mask rect
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('class', 'label-bg');
+                    labelGroup.appendChild(rect);
+                    labelGroup.appendChild(text);
+                    svg.appendChild(labelGroup);
+
+                    // Resize rect dynamic padding to mask lines underneath
+                    const bbox = text.getBBox();
+                    rect.setAttribute('x', bbox.x - 4);
+                    rect.setAttribute('y', bbox.y - 2);
+                    rect.setAttribute('width', bbox.width + 8);
+                    rect.setAttribute('height', bbox.height + 4);
+                }
+            });
+        }
+
+        // Render panels and highlight paths on focus
+        function showDetails(nodeId) {
+            const data = technicalDb[nodeId];
+            if (!data) return;
+
+            document.getElementById('infoTitle').innerText = data.title;
+            document.getElementById('infoPurpose').innerText = data.purpose;
+            document.getElementById('infoInterface').innerText = data.interface;
+            document.getElementById('infoPins').innerText = data.pins;
+            document.getElementById('infoVoltage').innerText = data.voltage;
+
+            document.getElementById('infoPanel').style.display = 'block';
+        }
+
+        function closeInfo() {
+            document.getElementById('infoPanel').style.display = 'none';
+        }
+
+        // Highlight connected flow paths on hover
+        function setHighlightMode(nodeId) {
+            const svg = document.getElementById('connector-svg');
+            const paths = svg.querySelectorAll('.conn-path');
+            const pulses = svg.querySelectorAll('.conn-pulse');
+            const labels = svg.querySelectorAll('.label-text');
+
+            if (!nodeId) {
+                // Reset to default
+                paths.forEach(p => { p.classList.remove('dimmed'); p.classList.remove('active'); });
+                pulses.forEach(p => p.classList.remove('active'));
+                labels.forEach(l => l.classList.remove('active'));
+                return;
+            }
+
+            paths.forEach((p, index) => {
+                const conn = connections[index];
+                if (conn.from === nodeId || conn.to === nodeId) {
+                    p.classList.add('active');
+                    pulses[index].classList.add('active');
+                    if (labels[index]) labels[index].classList.add('active');
+                } else {
+                    p.classList.add('dimmed');
+                }
+            });
+        }
+
+        // Bind interactive event listeners
+        document.querySelectorAll('.node').forEach(node => {
+            const id = node.id;
+            
+            node.addEventListener('mouseenter', () => {
+                setHighlightMode(id);
+                // Glow boundary subgraphs matching connection groups
+                if (id.startsWith('node-fc') || id.startsWith('node-motors')) {
+                    node.classList.add('highlight-uav');
+                } else if (id.startsWith('node-mcu') || id.startsWith('node-sonar') || id.startsWith('node-tof') || id.startsWith('node-mq135') || id.startsWith('node-bme280') || id.startsWith('node-pms5003') || id.startsWith('node-sd') || id.startsWith('node-wifi') || id.startsWith('node-lora')) {
+                    node.classList.add('highlight-payload');
+                } else {
+                    node.classList.add('highlight-gs');
+                }
+            });
+
+            node.addEventListener('mouseleave', () => {
+                setHighlightMode(null);
+                node.classList.remove('highlight-uav', 'highlight-payload', 'highlight-gs');
+            });
+
+            node.addEventListener('click', () => {
+                showDetails(id);
+            });
+        });
+
+        // Initialize schematic on load
+        window.addEventListener('load', drawAllConnectors);
+        window.addEventListener('resize', drawAllConnectors);
+    </script>
+</body>
+</html>
