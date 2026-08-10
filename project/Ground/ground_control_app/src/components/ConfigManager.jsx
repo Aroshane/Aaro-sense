@@ -4,6 +4,24 @@ import { Settings, Save, AlertCircle, Wifi, ShieldAlert, Sliders, Download, Aler
 const DEFAULT_CONFIG = {
   drone_id: "AEROSENSE-QUAD-01",
   firmware_version: "2.4.0-PROD",
+  sim_mode: false,
+  wifi: {
+    ssid: "AeroSense_AP",
+    password: "aerosense_pass",
+    ground_station_ip: "192.168.4.1",
+    udp_port: 5001
+  },
+  calibration: {
+    pm25_offset: 0.0,
+    pm10_offset: 0.0,
+    temp_offset: 0.0,
+    humidity_offset: 0.0,
+    mq135_scale: 1.0
+  },
+  avoidance: {
+    enabled: true,
+    safety_distance_m: 2.0
+  },
   baud_rate: 115200,
   telemetry_interval_ms: 1000,
   sensors: {
@@ -25,6 +43,15 @@ const DEFAULT_CONFIG = {
     temp_warning: 38.0,
     battery_min_volts: 14.2
   },
+  sdcard: {
+    enabled: true,
+    cs_pin: 15,
+    spi_id: 1
+  },
+  logging: {
+    base_dir: "/sd",
+    interval_s: 1.0
+  },
   storage: {
     sd_mount_point: "/sd",
     log_file_format: "CSV",
@@ -40,7 +67,17 @@ function ConfigManager({ config, onSaved, apiBase }) {
   // Sync with prop when loaded or fallback
   useEffect(() => {
     if (config) {
-      setLocalConfig(JSON.parse(JSON.stringify(config))); // Deep clone
+      setLocalConfig({
+        ...DEFAULT_CONFIG,
+        ...config,
+        wifi: { ...DEFAULT_CONFIG.wifi, ...(config.wifi || {}) },
+        calibration: { ...DEFAULT_CONFIG.calibration, ...(config.calibration || {}) },
+        avoidance: { ...DEFAULT_CONFIG.avoidance, ...(config.avoidance || {}) },
+        sensors: { ...DEFAULT_CONFIG.sensors, ...(config.sensors || {}) },
+        thresholds: { ...DEFAULT_CONFIG.thresholds, ...(config.thresholds || {}) },
+        sdcard: { ...DEFAULT_CONFIG.sdcard, ...(config.sdcard || {}) },
+        logging: { ...DEFAULT_CONFIG.logging, ...(config.logging || {}) }
+      });
     } else {
       setLocalConfig(DEFAULT_CONFIG);
     }
@@ -137,7 +174,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <input 
                 type="checkbox" 
                 style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--color-purple)' }}
-                checked={localConfig.sim_mode} 
+                checked={localConfig?.sim_mode || false} 
                 onChange={(e) => handleRootChange('sim_mode', e.target.checked, 'boolean')}
               />
             </div>
@@ -146,7 +183,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>SSID Hotspot Name</label>
               <input 
                 type="text" className="gcs-input" 
-                value={localConfig.wifi.ssid} 
+                value={localConfig?.wifi?.ssid || ''} 
                 onChange={(e) => handleNestedChange('wifi', 'ssid', e.target.value)} 
               />
             </div>
@@ -155,7 +192,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Hotspot Password</label>
               <input 
                 type="password" className="gcs-input" 
-                value={localConfig.wifi.password} 
+                value={localConfig?.wifi?.password || ''} 
                 onChange={(e) => handleNestedChange('wifi', 'password', e.target.value)} 
               />
             </div>
@@ -165,7 +202,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
                 <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Ground Station Target IP</label>
                 <input 
                   type="text" className="gcs-input" 
-                  value={localConfig.wifi.ground_station_ip} 
+                  value={localConfig?.wifi?.ground_station_ip || ''} 
                   onChange={(e) => handleNestedChange('wifi', 'ground_station_ip', e.target.value)} 
                 />
               </div>
@@ -173,7 +210,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
                 <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>UDP Target Port</label>
                 <input 
                   type="number" className="gcs-input" 
-                  value={localConfig.wifi.udp_port} 
+                  value={localConfig?.wifi?.udp_port ?? 5001} 
                   onChange={(e) => handleNestedChange('wifi', 'udp_port', e.target.value, 'number')} 
                 />
               </div>
@@ -193,7 +230,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PM2.5 Offset</label>
               <input 
                 type="number" step="0.1" className="gcs-input" 
-                value={localConfig.calibration.pm25_offset} 
+                value={localConfig?.calibration?.pm25_offset ?? 0.0} 
                 onChange={(e) => handleNestedChange('calibration', 'pm25_offset', e.target.value, 'number')} 
               />
             </div>
@@ -202,7 +239,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>PM10 Offset</label>
               <input 
                 type="number" step="0.1" className="gcs-input" 
-                value={localConfig.calibration.pm10_offset} 
+                value={localConfig?.calibration?.pm10_offset ?? 0.0} 
                 onChange={(e) => handleNestedChange('calibration', 'pm10_offset', e.target.value, 'number')} 
               />
             </div>
@@ -211,7 +248,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Temperature Offset (°C)</label>
               <input 
                 type="number" step="0.1" className="gcs-input" 
-                value={localConfig.calibration.temp_offset} 
+                value={localConfig?.calibration?.temp_offset ?? 0.0} 
                 onChange={(e) => handleNestedChange('calibration', 'temp_offset', e.target.value, 'number')} 
               />
             </div>
@@ -220,7 +257,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Humidity Offset (%)</label>
               <input 
                 type="number" step="0.1" className="gcs-input" 
-                value={localConfig.calibration.humidity_offset} 
+                value={localConfig?.calibration?.humidity_offset ?? 0.0} 
                 onChange={(e) => handleNestedChange('calibration', 'humidity_offset', e.target.value, 'number')} 
               />
             </div>
@@ -229,7 +266,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>MQ135 Voltage scale multiplier</label>
               <input 
                 type="number" step="0.01" className="gcs-input" 
-                value={localConfig.calibration.mq135_scale} 
+                value={localConfig?.calibration?.mq135_scale ?? 1.0} 
                 onChange={(e) => handleNestedChange('calibration', 'mq135_scale', e.target.value, 'number')} 
               />
             </div>
@@ -256,7 +293,7 @@ function ConfigManager({ config, onSaved, apiBase }) {
               <input 
                 type="checkbox" 
                 style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--color-green)' }}
-                checked={localConfig.avoidance.enabled} 
+                checked={localConfig?.avoidance?.enabled || false} 
                 onChange={(e) => handleNestedChange('avoidance', 'enabled', e.target.checked, 'boolean')}
               />
             </div>
