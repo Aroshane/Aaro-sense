@@ -45,7 +45,7 @@ function AIPredictor({ apiBase }) {
 
   useEffect(() => {
     fetchPrediction();
-  }, [useLive]);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -111,9 +111,23 @@ function AIPredictor({ apiBase }) {
         
         {/* Main prediction result card */}
         <div className="glass-card card-purple">
-          <h3 style={{ fontSize: '15px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <TrendingUp size={16} /> Hyperlocal PM2.5 forecast (Horizon: +15 minutes)
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '15px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <TrendingUp size={16} /> Hyperlocal PM2.5 forecast (Horizon: +15 minutes)
+            </h3>
+            <span style={{ 
+              fontSize: '10px', 
+              fontWeight: 'bold', 
+              padding: '4px 8px', 
+              borderRadius: '6px',
+              background: useLive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 85, 0, 0.15)',
+              color: useLive ? 'var(--color-green-light)' : 'var(--color-orange-light)',
+              border: useLive ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 85, 0, 0.3)',
+              boxShadow: useLive ? '0 0 10px rgba(16, 185, 129, 0.05)' : '0 0 10px rgba(255, 85, 0, 0.05)'
+            }}>
+              {useLive ? '● LIVE TELEMETRY' : '● WHAT-IF FORECAST'}
+            </span>
+          </div>
 
           <div style={{ display: 'flex', gap: '24px', alignItems: 'center', marginBottom: '18px' }}>
             <div style={{ flex: '1', background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', textAlign: 'center' }}>
@@ -125,11 +139,11 @@ function AIPredictor({ apiBase }) {
               </span>
             </div>
 
-            <div style={{ flex: '1.2', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(12, 14, 30, 0.8) 100%)', padding: '20px', borderRadius: '12px', border: '1.5px solid var(--border-color-glow)', textAlign: 'center', boxShadow: '0 0 15px rgba(139, 92, 246, 0.15)' }}>
-              <span style={{ fontSize: '11px', color: 'var(--color-purple-light)', textTransform: 'uppercase', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
+            <div style={{ flex: '1.2', background: 'linear-gradient(135deg, rgba(255, 85, 0, 0.15) 0%, rgba(12, 14, 30, 0.8) 100%)', padding: '20px', borderRadius: '12px', border: '1.5px solid var(--border-color-glow)', textAlign: 'center', boxShadow: '0 0 15px rgba(255, 85, 0, 0.25)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--color-orange-light)', textTransform: 'uppercase', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
                 PREDICTED GROUND PM2.5 (+15 MIN)
               </span>
-              <span style={{ fontSize: '36px', fontWeight: '800', fontFamily: 'Orbitron', color: 'var(--color-purple-light)' }}>
+              <span style={{ fontSize: '36px', fontWeight: '800', fontFamily: 'Orbitron', color: 'var(--color-orange-light)' }}>
                 {predictionData.prediction.toFixed(1)} <span style={{ fontSize: '14px', fontWeight: '400', fontFamily: 'sans-serif', color: '#fff' }}>µg/m³</span>
               </span>
             </div>

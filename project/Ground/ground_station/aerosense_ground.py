@@ -17,6 +17,11 @@ import socket
 import threading
 import sqlite3
 import os
+
+# Automatically set working directory to project root (parent of Ground/ground_station)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+os.chdir(PROJECT_ROOT)
+
 from datetime import datetime, timezone
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS

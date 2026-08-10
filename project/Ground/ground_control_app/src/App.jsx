@@ -4,6 +4,8 @@ import MissionPlanner from './components/MissionPlanner';
 import ObstacleRadar from './components/ObstacleRadar';
 import AIPredictor from './components/AIPredictor';
 import ConfigManager from './components/ConfigManager';
+import RainAnimation from './components/RainAnimation';
+import CloudBackground from './components/CloudBackground';
 import { 
   Activity, 
   MapPin, 
@@ -81,18 +83,43 @@ function App() {
     pm25: 0, pm10: 0, temperature: 0, humidity: 0, pressure: 0, alt_m: 0, quality_flag: 0, gps_quality: 0
   };
 
+  // Compare telemetry with user threshold limits
+  const pm25Limit = config && config.thresholds ? config.thresholds.pm25_warning : 60.0;
+  const tempLimit = config && config.thresholds ? config.thresholds.temp_warning : 38.0;
+  const pm25Alert = apiOnline && latestData.pm25 > pm25Limit;
+  const tempAlert = apiOnline && latestData.temperature > tempLimit;
+  const isAnyAlert = pm25Alert || tempAlert;
+
   // Compute status metrics
   const isHealthy = latestData.quality_flag === 0;
-  const aqiLabel = latestData.pm25 <= 12 ? 'Good' : latestData.pm25 <= 35 ? 'Moderate' : latestData.pm25 <= 55 ? 'Unhealthy' : 'Hazardous';
-  const aqiClass = latestData.pm25 <= 12 ? 'marquee-success' : latestData.pm25 <= 35 ? 'marquee-info' : 'marquee-warning';
-  const aqiDot = latestData.pm25 <= 12 ? 'marquee-success-dot' : latestData.pm25 <= 35 ? 'marquee-info-dot' : 'marquee-warning-dot';
+  // Indian National AQI PM2.5 categories (µg/m³):
+  // 0-30: Good, 31-60: Satisfactory, 61-90: Moderate, 91-120: Poor, 121-250: Very Poor, >250: Severe
+  const pVal = latestData.pm25 || 0;
+  const aqiLabel = pVal <= 30 ? 'Good' : pVal <= 60 ? 'Satisfactory' : pVal <= 90 ? 'Moderate' : pVal <= 120 ? 'Poor' : pVal <= 250 ? 'Very Poor' : 'Severe';
+  const aqiClass = pVal <= 30 ? 'marquee-success' : pVal <= 60 ? 'marquee-success' : pVal <= 90 ? 'marquee-info' : pVal <= 120 ? 'marquee-warning' : 'marquee-danger';
+  const aqiDot = pVal <= 30 ? 'marquee-success-dot' : pVal <= 60 ? 'marquee-success-dot' : pVal <= 90 ? 'marquee-info-dot' : pVal <= 120 ? 'marquee-warning-dot' : 'marquee-danger-dot';
 
   return (
     <>
       <div className="bg-grid"></div>
       <div className="bg-spotlight"></div>
+      <RainAnimation humidity={latestData.humidity || 80} />
+      <CloudBackground />
       
       <div className="gcs-container">
+        {isAnyAlert && (
+          <div className="blink-alert-banner" style={{ background: 'rgba(244, 63, 94, 0.15)', border: '1.5px solid var(--color-rose)', borderRadius: '12px', padding: '12px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 0 15px rgba(244, 63, 94, 0.25)', animation: 'alert-blink 1s infinite alternate' }}>
+            <span style={{ fontSize: '20px' }}>⚠️</span>
+            <div style={{ flex: '1' }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', display: 'block' }}>GCS CRITICAL PARAMETER ALERT</span>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+                {pm25Alert && `PM2.5 Index is high: ${latestData.pm25.toFixed(1)} µg/m³ (Limit: ${pm25Limit} µg/m³). `}
+                {tempAlert && `Atmospheric Temperature is high: ${latestData.temperature.toFixed(1)}°C (Limit: ${tempLimit}°C).`}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Navbar Title and Stats */}
         <header style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
           <div style={{ fontSize: '36px' }}>🛸</div>
@@ -236,7 +263,14 @@ function App() {
         {/* Tab Routing Renders */}
         <main>
           {activeTab === 'overview' && (
-            <Dashboard telemetry={telemetry} stats={stats} apiOnline={apiOnline} />
+            <Dashboard 
+              telemetry={telemetry} 
+              stats={stats} 
+              apiOnline={apiOnline} 
+              thresholds={config && config.thresholds} 
+              pm25Alert={pm25Alert} 
+              tempAlert={tempAlert} 
+            />
           )}
           {activeTab === 'mission' && (
             <MissionPlanner apiBase={API_BASE} />

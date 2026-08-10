@@ -12,6 +12,10 @@ import random
 import msgpack
 import os
 
+# Automatically set working directory to project root (parent of Ground/ground_station)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+os.chdir(PROJECT_ROOT)
+
 # UDP Telemetry settings
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005

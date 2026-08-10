@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroSense — SpeedyBee F405 & ESP32-S3 Wiring Guide</title>
+    <title>AeroSense — SpeedyBee F405 & ESP32 DevKit Wiring Guide</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -651,7 +651,7 @@
             text-transform: uppercase;
         }
 
-        /* ESP32-S3 Vector PCB */
+        /* ESP32 DevKit Vector PCB */
         #esp32-board {
             position: absolute;
             left: 260px;
@@ -760,7 +760,7 @@
     <!-- Header Panel -->
     <header>
         <div class="header-title">
-            <h1>AeroSense — SpeedyBee F405 & ESP32-S3 Wiring Guide</h1>
+            <h1>AeroSense — SpeedyBee F405 & ESP32 DevKit Wiring Guide</h1>
             <p>Select a component to display its wiring routes and pin mappings to the SpeedyBee autopilot</p>
         </div>
         <div class="sys-badge">Status: ArduCopter Telemetry Active</div>
@@ -839,7 +839,7 @@
 
             <!-- Subgraph boundaries labels -->
             <div class="canvas-section-lbl" style="left: 20px; top: 20px;">Drone Autopilot Core (SpeedyBee)</div>
-            <div class="canvas-section-lbl" style="left: 20px; top: 400px;">Payload Sensor Core (ESP32-S3)</div>
+            <div class="canvas-section-lbl" style="left: 20px; top: 400px;">Payload Sensor Core (ESP32 DevKit)</div>
 
             <!-- ── Left Column Components ── -->
 
@@ -975,9 +975,9 @@
                 </div>
             </div>
 
-            <!-- ESP32-S3 Payload MCU -->
+            <!-- ESP32 Payload MCU -->
             <div id="esp32-board" onclick="selectComp('mavlink', this)">
-                <div class="comp-title" style="margin-bottom: 2px;">ESP32-S3 DevKit</div>
+                <div class="comp-title" style="margin-bottom: 2px;">ESP32 DevKit</div>
                 <div style="text-align: center; font-size: 8px; color: var(--neon-green); margin-bottom: 10px; text-transform: uppercase;">AeroSense Payload</div>
 
                 <div class="sb-bottom-row-1" style="padding: 0 20px;">
@@ -989,7 +989,7 @@
                 </div>
 
                 <div class="sb-center-mcu" style="width: 95px; height: 42px; background: #0c1825; margin: 5px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px solid #00f5d4; border-radius: 4px;">
-                    <h5 style="font-family: 'Space Grotesk', sans-serif; font-size: 9px; color: #fff; line-height: 1.1;">ESP32-S3</h5>
+                    <h5 style="font-family: 'Space Grotesk', sans-serif; font-size: 9px; color: #fff; line-height: 1.1;">ESP32</h5>
                     <span style="font-size: 6px; color: var(--neon-blue); letter-spacing: 0.2px; line-height: 1.1;">MAVLink RX/TX</span>
                 </div>
 
@@ -1099,7 +1099,7 @@
 
             mavlink: {
                 title: "Autopilot MAVLink Telemetry Connection Guide",
-                fcCli: "# Configure UART2 (T2/R2) for MAVLink Telemetry at 57600 baud\n# under ArduPilot / PX4 setup\n# Ensure SERIAL2_BAUD = 57 and SERIAL2_PROTOCOL = 2",
+                fcCli: "# Configure UART2 (T2/R2) for MAVLink Telemetry at 115200 baud\n# under ArduPilot / PX4 setup\n# Ensure SERIAL2_BAUD = 115 and SERIAL2_PROTOCOL = 2",
                 espConfig: "// MAVLink Connection config:\n// UART1 on pins GPIO33 (RX1) and GPIO25 (TX1)\n// Direct telemetry parse extracts coordinates without standalone GPS",
                 table: [
                     { name: "RX1", color: "Purple", type: "ESP32 RX", fcPad: "T2 (UART2 TX)", purpose: "Receives GLOBAL_POSITION_INT telemetry from FC" },

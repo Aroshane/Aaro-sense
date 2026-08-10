@@ -69,7 +69,7 @@ function MissionPlanner({ apiBase }) {
 
     // Group waypoints by altitude to display multiple paths with different colors
     const pathsByAlt = {};
-    const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#ea580c'];
+    const colors = ['#ff5500', '#3b82f6', '#10b981', '#ea580c'];
     
     // Filter actual nav points
     const navWps = waypoints.filter(wp => wp.command === 16 || wp.command === 22 || wp.command === 20);

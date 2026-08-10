@@ -51,10 +51,14 @@ const int   GS_PORT   = 5005;
 // MQ-135 Gas Sensor Analog Pin
 #define MQ135_ADC_PIN 34
 
+// HC-SR04 Ultrasonic Sonar Pins
+#define SONAR_TRIG_PIN 12
+#define SONAR_ECHO_PIN 13
+
 // Calibration Offsets
-const float PM25_OFFSET     = 0.0;
-const float PM10_OFFSET     = 0.0;
-const float TEMP_OFFSET     = -1.5;
+const float PM25_OFFSET     = 5.38;
+const float PM10_OFFSET     = 27.46;
+const float TEMP_OFFSET     = -2.41;
 const float HUMIDITY_OFFSET = 2.0;
 const float MQ135_SCALE     = 1.0;
 
@@ -81,6 +85,18 @@ struct PollutionPoint {
   int quality_flag;
 };
 
+struct __attribute__((__packed__)) MAVLink2_ObstacleDistance_Payload {
+  uint64_t time_usec;
+  uint8_t sensor_type;
+  uint16_t distances[72];
+  uint8_t increment;
+  uint16_t min_distance;
+  uint16_t max_distance;
+  float increment_f;
+  float angle_offset;
+  uint8_t frame;
+};
+
 // Global telemetry reading
 PollutionPoint currentPoint;
 bool loraOk = false;
@@ -93,6 +109,7 @@ HardwareSerial SerialPMS(2);
 // Time counters for non-blocking loop execution
 unsigned long lastPayloadTime = 0;
 unsigned long lastMAVLinkGPSUpdate = 0;
+unsigned long lastAvoidanceTime = 0;
 uint8_t mav_seq = 0;
 
 // ── LoRa Registers ────────────────────────────────────────────────────────────
@@ -240,6 +257,26 @@ double readMQ135() {
   // ESP32 12-bit ADC (0-4095) representing 0-3.3V
   double voltage = (raw / 4095.0) * 3.3 * MQ135_SCALE;
   return voltage;
+}
+
+uint16_t readHCSR04() {
+  digitalWrite(SONAR_TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(SONAR_TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(SONAR_TRIG_PIN, LOW);
+  
+  // Measure echo pulse width with 30ms timeout (30000 us)
+  unsigned long duration = pulseIn(SONAR_ECHO_PIN, HIGH, 30000);
+  if (duration == 0) {
+    return 400; // Default to max range 4.0m (400 cm)
+  }
+  
+  double dist_cm = duration * 0.01715;
+  if (dist_cm > 400.0) {
+    dist_cm = 400.0;
+  }
+  return (uint16_t)dist_cm;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -416,12 +453,66 @@ void readIncomingMAVLink() {
   }
 }
 
+void sendMAVLinkObstacleDistance(uint16_t distance_cm, int orientation_deg) {
+  // Create payload
+  MAVLink2_ObstacleDistance_Payload payload;
+  memset(&payload, 0, sizeof(payload));
+  
+  payload.time_usec = micros();
+  payload.sensor_type = 0; // 0: Laser/Ultrasonic
+  
+  for (int i = 0; i < 72; i++) {
+    payload.distances[i] = 0;
+  }
+  
+  int sector = (orientation_deg / 5) % 72;
+  if (sector < 0) sector += 72;
+  payload.distances[sector] = distance_cm;
+  
+  payload.increment = 0;
+  payload.min_distance = 10;   // 10cm
+  payload.max_distance = 400;  // 400cm
+  payload.increment_f = 5.0f;
+  payload.angle_offset = 0.0f;
+  payload.frame = 12;          // MAV_FRAME_BODY_FRD
+  
+  // Pack MAVLink v2 Header
+  uint8_t packet[10 + 167 + 2];
+  packet[0] = 0xFD;             // STX
+  packet[1] = 167;              // Payload length
+  packet[2] = 0;                // Incompatibility flags
+  packet[3] = 0;                // Compatibility flags
+  packet[4] = mav_seq++;        // Packet sequence
+  packet[5] = 1;                // System ID (1)
+  packet[6] = 191;              // Component ID (191 - MAV_COMP_ID_ONBOARD_COMPUTER)
+  packet[7] = 0x4A;             // Msg ID Low
+  packet[8] = 0x01;             // Msg ID Mid
+  packet[9] = 0x00;             // Msg ID High
+  
+  // Copy payload
+  memcpy(packet + 10, &payload, sizeof(payload));
+  
+  // Calculate CRC (starts from index 1, excluding STX)
+  uint16_t crc = 0xFFFF;
+  for (int i = 1; i < 10 + 167; i++) {
+    crc = crcAccumulate(packet[i], crc);
+  }
+  crc = crcAccumulate(23, crc); // CRC Extra byte for MSG_ID 330
+  
+  // Append CRC (little-endian)
+  packet[10 + 167] = crc & 0xFF;
+  packet[10 + 167 + 1] = (crc >> 8) & 0xFF;
+  
+  // Send over MAVLink serial port
+  SerialMAV.write(packet, sizeof(packet));
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // SETUP
 // ═════════════════════════════════════════════════════════════════════════════
 void setup() {
   Serial.begin(115200);                                        // USB debug port
-  SerialMAV.begin(57600, SERIAL_8N1, MAV_RX_PIN, MAV_TX_PIN);  // UART1 for MAVLink to Autopilot
+  SerialMAV.begin(115200, SERIAL_8N1, MAV_RX_PIN, MAV_TX_PIN);  // UART1 for MAVLink to Autopilot
   
   // Wait up to 3 seconds for Serial Monitor to connect (useful for USB CDC debug)
   unsigned long startWait = millis();
@@ -483,6 +574,11 @@ void setup() {
   analogReadResolution(12);
   pinMode(MQ135_ADC_PIN, INPUT);
 
+  // Configure Pins for HC-SR04
+  pinMode(SONAR_TRIG_PIN, OUTPUT);
+  pinMode(SONAR_ECHO_PIN, INPUT);
+  digitalWrite(SONAR_TRIG_PIN, LOW);
+
   // Connect WiFi STA
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   Serial.printf("\n[WiFi] Connecting to %s...\n", WIFI_SSID);
@@ -497,7 +593,8 @@ void setup() {
     Serial.println("[WiFi] Connection timed out. Running without UDP.");
   }
 
-  // Initialize BMP280
+  // Initialize BMP280 (Re-initialize Wire pins to be sure custom pins are mapped)
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
   bmeOk = bme.begin(0x76);
   if (bmeOk) {
     Serial.println("[BMP280] Sensor initialized successfully.");
@@ -640,5 +737,19 @@ void loop() {
       currentPoint.pm25, currentPoint.pm10, currentPoint.temp, currentPoint.hum,
       currentPoint.mq135_v, currentPoint.quality_flag
     );
+  }
+
+  // 3. Obstacle Avoidance Loop (10 Hz)
+  if (now - lastAvoidanceTime >= 100) {
+    lastAvoidanceTime = now;
+    
+    // Read HC-SR04 sonar
+    uint16_t dist_cm = readHCSR04();
+    
+    // Debug output to Serial Monitor
+    Serial.printf("[Sonar Debug] Distance: %u cm\n", dist_cm);
+    
+    // Send MAVLink OBSTACLE_DISTANCE telemetry (sensor oriented at 90 deg)
+    sendMAVLinkObstacleDistance(dist_cm, 90);
   }
 }
