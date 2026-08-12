@@ -1,5 +1,9 @@
 *
-!AeroSense_Project/
-!AeroSense_Project/project/
-!AeroSense_Project/project/**
+!dashboard/
+!dashboard/aerosense_dashboard.py
+!dashboard/index.py
+!dashboard/vercel.json
+!dashboard/requirements.txt
+!dashboard/assets/
+!dashboard/assets/**
 !.gitignore

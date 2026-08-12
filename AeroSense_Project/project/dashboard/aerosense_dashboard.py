@@ -627,6 +627,7 @@ def get_analytics_layout():
 # ═════════════════════════════════════════════════════════════════════════════
 
 app = dash.Dash(__name__, title="AeroSense — Pollution Mapper", suppress_callback_exceptions=True)
+server = app.server 
 
 app.layout = html.Div(style={
     "position": "relative",
